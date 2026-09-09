@@ -41,11 +41,11 @@ function TimeCounter() {
       }
     };
     updateTimer();
-    const interval = setInterval(updateTimer, 60000); // Update every minute
+    const interval = setInterval(updateTimer, 60000);
     return () => clearInterval(interval);
   }, []);
   return (
-    <div className="fixed top-4 left-4 sm:top-6 sm:left-6 z-[100] premium-glass px-4 py-2 rounded-full flex items-center justify-center gap-2 shadow-lg border border-white/10 animate-blur-fade pointer-events-none">
+    <div className="fixed top-4 left-4 sm:top-6 sm:left-6 z-[9999] premium-glass px-4 py-2 rounded-full flex items-center justify-center gap-2 shadow-lg border border-white/10 animate-blur-fade pointer-events-none">
       <Heart className="w-3.5 h-3.5 text-rose-400 animate-pulse" fill="currentColor" />
       <div className="flex gap-1.5 items-baseline">
         <span className="text-sm font-bold text-white tracking-wide">{timePassed.days}д</span>
@@ -73,7 +73,7 @@ function MusicPlayer({ isPlaying, toggleMusic, setMusicState }) {
   return (
     <>
       <audio ref={audioRef} src="/music/sting.mp3" loop autoPlay />
-      <button onClick={toggleMusic} className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-[100] premium-glass w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-500 border shadow-lg ${isPlaying ? 'border-rose-400/50 animate-pulse-ring' : 'border-white/10 opacity-70'} animate-blur-fade hover:scale-110 active:scale-90`}>
+      <button onClick={toggleMusic} className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-[9999] premium-glass w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-500 border shadow-lg ${isPlaying ? 'border-rose-400/50 animate-pulse-ring' : 'border-white/10 opacity-70'} animate-blur-fade hover:scale-110 active:scale-90`}>
         {isPlaying ? <Volume2 className="w-4 h-4 text-rose-400" /> : <VolumeX className="w-4 h-4 text-gray-400" />}
       </button>
     </>
@@ -81,7 +81,7 @@ function MusicPlayer({ isPlaying, toggleMusic, setMusicState }) {
 }
 
 // ─── Компонент: Общий Холст (Live Touch) ───────────────────
-function SharedCanvas({ connection, onDisconnect }) {
+function SharedCanvas({ connection, onDisconnect, isHost }) {
   const canvasRef = useRef(null);
   const localPos = useRef({ x: -100, y: -100 });
   const remotePos = useRef({ x: -100, y: -100 });
@@ -92,6 +92,13 @@ function SharedCanvas({ connection, onDisconnect }) {
   const syncStartTime = useRef(0);
   const [syncProgress, setSyncProgress] = useState(0);
   const [secretUnlocked, setSecretUnlocked] = useState(false);
+
+  // Хост (тот кто дает код) = Синий. Гость (тот кто вводит) = Розовый.
+  // Так как каждый хочет видеть СЕБЯ своим цветом:
+  // Для Хоста: local = голубой, remote = розовый.
+  // Для Гостя: local = розовый, remote = голубой.
+  const localColor = isHost ? '#00e5ff' : '#ff3385';
+  const remoteColor = isHost ? '#ff3385' : '#00e5ff';
   
   useEffect(() => {
     if (!connection) return;
@@ -179,7 +186,6 @@ function SharedCanvas({ connection, onDisconnect }) {
     }
   };
 
-  // Canvas Render Loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -194,11 +200,9 @@ function SharedCanvas({ connection, onDisconnect }) {
     
     let animationId;
     const render = () => {
-      // Плавное затухание для эффекта неоновых шлейфов
       ctx.fillStyle = 'rgba(8, 6, 20, 0.08)'; 
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Рисуем волны (Ripples)
       for (let i = ripples.current.length - 1; i >= 0; i--) {
         const r = ripples.current[i];
         ctx.beginPath();
@@ -211,12 +215,12 @@ function SharedCanvas({ connection, onDisconnect }) {
         if (r.alpha <= 0) ripples.current.splice(i, 1);
       }
 
-      // Чужой след (Розовый неон)
+      // Чужой след
       if (remotePos.current.x >= 0) {
         ctx.beginPath();
         ctx.arc(remotePos.current.x, remotePos.current.y, 6, 0, Math.PI * 2);
-        ctx.fillStyle = '#ff3385';
-        ctx.shadowColor = '#ff3385';
+        ctx.fillStyle = remoteColor;
+        ctx.shadowColor = remoteColor;
         ctx.shadowBlur = 20;
         ctx.fill();
         ctx.beginPath();
@@ -225,12 +229,12 @@ function SharedCanvas({ connection, onDisconnect }) {
         ctx.fill();
       }
 
-      // Твой след (Голубой неон)
+      // Твой след
       if (localPos.current.x >= 0) {
         ctx.beginPath();
         ctx.arc(localPos.current.x, localPos.current.y, 6, 0, Math.PI * 2);
-        ctx.fillStyle = '#00e5ff';
-        ctx.shadowColor = '#00e5ff';
+        ctx.fillStyle = localColor;
+        ctx.shadowColor = localColor;
         ctx.shadowBlur = 20;
         ctx.fill();
         ctx.beginPath();
@@ -247,7 +251,7 @@ function SharedCanvas({ connection, onDisconnect }) {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationId);
     };
-  }, []);
+  }, [localColor, remoteColor]);
 
   return (
     <div 
@@ -264,7 +268,6 @@ function SharedCanvas({ connection, onDisconnect }) {
     >
       <canvas ref={canvasRef} className="block w-full h-full" />
       
-      {/* Прогресс-бар синхронизации */}
       {syncProgress > 0 && !secretUnlocked && (
         <div 
           className="absolute pointer-events-none transition-all duration-100 ease-out"
@@ -286,14 +289,12 @@ function SharedCanvas({ connection, onDisconnect }) {
         </div>
       )}
       
-      {/* Подсказка */}
       {!secretUnlocked && (
         <div className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 text-white/40 text-[10px] sm:text-xs tracking-[0.3em] uppercase text-center font-bold font-body animate-breathe pointer-events-none w-[90%]">
           Коснитесь друг друга и не отпускайте
         </div>
       )}
 
-      {/* Модальное окно с секретом */}
       {secretUnlocked && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-blur-fade pointer-events-auto">
           <div className="premium-glass p-8 rounded-3xl max-w-sm w-full text-center relative animate-pop-up border border-rose-400/30 shadow-[0_0_50px_rgba(255,107,158,0.2)]">
@@ -326,6 +327,9 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState('');
+  
+  // Хост = тот, к кому подключились. Гость = тот, кто ввел код.
+  const [isHost, setIsHost] = useState(true); 
 
   useEffect(() => {
     try {
@@ -335,6 +339,8 @@ export default function App() {
       newPeer.on('open', (id) => setPeerId(id));
 
       newPeer.on('connection', (conn) => {
+        // К нам подключились - значит мы Хост
+        setIsHost(true);
         conn.on('open', () => setConnection(conn));
         conn.on('close', () => setConnection(null));
       });
@@ -358,6 +364,9 @@ export default function App() {
       setError('');
       try {
         const conn = peer.connect(remotePeerId);
+        // Мы сами ввели код - значит мы Гость (Вика)
+        setIsHost(false);
+        
         conn.on('open', () => {
           setConnection(conn);
           setIsConnecting(false);
@@ -382,23 +391,24 @@ export default function App() {
 
   if (connection) {
     return (
-      <div className="min-h-screen overflow-hidden relative font-body bg-[#080614]">
+      <div className="min-h-screen relative font-body bg-[#080614]">
          <TimeCounter />
          <MusicPlayer isPlaying={isMusicPlaying} toggleMusic={() => setIsMusicPlaying(!isMusicPlaying)} setMusicState={setIsMusicPlaying} />
-         <SharedCanvas connection={connection} onDisconnect={() => setConnection(null)} />
+         <SharedCanvas connection={connection} onDisconnect={() => setConnection(null)} isHost={isHost} />
       </div>
     );
   }
 
+  // Убрал overflow-hidden отсюда, чтобы на мобилках лобби можно было скроллить, если оно не влезает
   return (
-    <div className="min-h-screen text-white overflow-hidden relative font-body flex flex-col">
-      <div className="premium-bg" />
+    <div className="min-h-screen text-white relative font-body flex flex-col pb-10">
+      <div className="premium-bg fixed inset-0 z-0 pointer-events-none" />
       <MagicParticles />
       
       <TimeCounter />
       <MusicPlayer isPlaying={isMusicPlaying} toggleMusic={() => setIsMusicPlaying(!isMusicPlaying)} setMusicState={setIsMusicPlaying} />
       
-      <main className="relative z-10 w-full flex-grow flex items-center justify-center p-4">
+      <main className="relative z-10 w-full flex-grow flex items-center justify-center p-4 pt-24 sm:pt-20">
         <div className="premium-glass p-6 sm:p-10 rounded-[2rem] w-full max-w-sm animate-blur-fade flex flex-col items-center">
           
           <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,107,158,0.2)]">

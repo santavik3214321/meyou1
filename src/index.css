@@ -10,13 +10,8 @@
 html, body {
   margin: 0;
   padding: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  overscroll-behavior: none;
-  touch-action: none; /* Crucial for canvas drawing on mobile */
-  user-select: none;
-  -webkit-user-select: none;
+  width: 100%;
+  min-height: 100vh;
   font-family: var(--font-body);
   background-color: #080614;
   color: #ffffff;
