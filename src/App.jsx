@@ -17,7 +17,7 @@ function MagicParticles() {
     setParticles(newParticles);
   }, []);
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[1]">
       {particles.map(p => (
         <div key={p.id} className="particle" style={{ left: p.left, width: '10px', height: '10px', animation: `float-particle ${p.animationDuration} linear infinite`, animationDelay: p.animationDelay, opacity: p.opacity, transform: `scale(${p.scale})` }} />
       ))}
@@ -25,7 +25,7 @@ function MagicParticles() {
   );
 }
 
-// ─── Компонент: Счетчик Времени (Компактный для Mobile) ─────
+// ─── Компонент: Счетчик Времени (С учетом Safe Area) ───────
 function TimeCounter() {
   const [timePassed, setTimePassed] = useState({ days: 0, hours: 0, minutes: 0 });
   useEffect(() => {
@@ -44,18 +44,19 @@ function TimeCounter() {
     const interval = setInterval(updateTimer, 60000);
     return () => clearInterval(interval);
   }, []);
+  
   return (
-    <div className="fixed top-4 left-4 sm:top-6 sm:left-6 z-[9999] premium-glass px-4 py-2 rounded-full flex items-center justify-center gap-2 shadow-lg border border-white/10 animate-blur-fade pointer-events-none">
-      <Heart className="w-3.5 h-3.5 text-rose-400 animate-pulse" fill="currentColor" />
-      <div className="flex gap-1.5 items-baseline">
-        <span className="text-sm font-bold text-white tracking-wide">{timePassed.days}д</span>
-        <span className="text-xs text-white/50">{String(timePassed.hours).padStart(2, '0')}:{String(timePassed.minutes).padStart(2, '0')}</span>
+    <div className="pointer-events-none premium-glass px-3 py-1.5 sm:px-4 sm:py-2 rounded-full flex items-center justify-center gap-1.5 shadow-lg border border-white/10 animate-blur-fade">
+      <Heart className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-400 animate-pulse" fill="currentColor" />
+      <div className="flex gap-1 sm:gap-1.5 items-baseline">
+        <span className="text-xs sm:text-sm font-bold text-white tracking-wide">{timePassed.days}д</span>
+        <span className="text-[10px] sm:text-xs text-white/70">{String(timePassed.hours).padStart(2, '0')}:{String(timePassed.minutes).padStart(2, '0')}</span>
       </div>
     </div>
   );
 }
 
-// ─── Компонент: Музыкальный плеер (Компактный круглый) ──────
+// ─── Компонент: Музыкальный плеер (С учетом Safe Area) ──────
 function MusicPlayer({ isPlaying, toggleMusic, setMusicState }) {
   const audioRef = useRef(null);
   useEffect(() => {
@@ -73,8 +74,8 @@ function MusicPlayer({ isPlaying, toggleMusic, setMusicState }) {
   return (
     <>
       <audio ref={audioRef} src="/music/sting.mp3" loop autoPlay />
-      <button onClick={toggleMusic} className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-[9999] premium-glass w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-500 border shadow-lg ${isPlaying ? 'border-rose-400/50 animate-pulse-ring' : 'border-white/10 opacity-70'} animate-blur-fade hover:scale-110 active:scale-90`}>
-        {isPlaying ? <Volume2 className="w-4 h-4 text-rose-400" /> : <VolumeX className="w-4 h-4 text-gray-400" />}
+      <button onClick={toggleMusic} className={`pointer-events-auto premium-glass w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-500 border shadow-lg ${isPlaying ? 'border-rose-400/50 animate-pulse-ring' : 'border-white/10 opacity-70'} animate-blur-fade hover:scale-110 active:scale-90`}>
+        {isPlaying ? <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" /> : <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />}
       </button>
     </>
   );
@@ -93,10 +94,6 @@ function SharedCanvas({ connection, onDisconnect, isHost }) {
   const [syncProgress, setSyncProgress] = useState(0);
   const [secretUnlocked, setSecretUnlocked] = useState(false);
 
-  // Хост (тот кто дает код) = Синий. Гость (тот кто вводит) = Розовый.
-  // Так как каждый хочет видеть СЕБЯ своим цветом:
-  // Для Хоста: local = голубой, remote = розовый.
-  // Для Гостя: local = розовый, remote = голубой.
   const localColor = isHost ? '#00e5ff' : '#ff3385';
   const remoteColor = isHost ? '#ff3385' : '#00e5ff';
   
@@ -215,7 +212,6 @@ function SharedCanvas({ connection, onDisconnect, isHost }) {
         if (r.alpha <= 0) ripples.current.splice(i, 1);
       }
 
-      // Чужой след
       if (remotePos.current.x >= 0) {
         ctx.beginPath();
         ctx.arc(remotePos.current.x, remotePos.current.y, 6, 0, Math.PI * 2);
@@ -229,7 +225,6 @@ function SharedCanvas({ connection, onDisconnect, isHost }) {
         ctx.fill();
       }
 
-      // Твой след
       if (localPos.current.x >= 0) {
         ctx.beginPath();
         ctx.arc(localPos.current.x, localPos.current.y, 6, 0, Math.PI * 2);
@@ -255,7 +250,7 @@ function SharedCanvas({ connection, onDisconnect, isHost }) {
 
   return (
     <div 
-      className="fixed inset-0 touch-none cursor-crosshair z-0" 
+      className="absolute inset-0 touch-none cursor-crosshair z-0 overflow-hidden" 
       style={{ backgroundColor: '#080614' }}
       onPointerMove={handlePointerMove}
       onPointerDown={handlePointerMove}
@@ -290,24 +285,24 @@ function SharedCanvas({ connection, onDisconnect, isHost }) {
       )}
       
       {!secretUnlocked && (
-        <div className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 text-white/40 text-[10px] sm:text-xs tracking-[0.3em] uppercase text-center font-bold font-body animate-breathe pointer-events-none w-[90%]">
+        <div className="absolute top-[30vh] left-1/2 -translate-x-1/2 text-white/40 text-[10px] sm:text-xs tracking-[0.3em] uppercase text-center font-bold font-body animate-breathe pointer-events-none w-[90%]">
           Коснитесь друг друга и не отпускайте
         </div>
       )}
 
       {secretUnlocked && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-blur-fade pointer-events-auto">
-          <div className="premium-glass p-8 rounded-3xl max-w-sm w-full text-center relative animate-pop-up border border-rose-400/30 shadow-[0_0_50px_rgba(255,107,158,0.2)]">
-            <button onClick={() => setSecretUnlocked(false)} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors">
+        <div className="absolute inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-blur-fade pointer-events-auto overflow-y-auto">
+          <div className="premium-glass p-6 sm:p-8 rounded-3xl max-w-sm w-full text-center relative animate-pop-up border border-rose-400/30 shadow-[0_0_50px_rgba(255,107,158,0.2)] m-auto">
+            <button onClick={() => setSecretUnlocked(false)} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors p-2">
               <X size={20} />
             </button>
-            <Sparkles className="w-12 h-12 text-rose-400 mx-auto mb-4 animate-pulse-ring rounded-full" />
-            <h2 className="font-heading text-2xl font-bold mb-4 text-white drop-shadow-md">Созвездие Открыто!</h2>
-            <p className="text-rose-100/90 font-body text-sm leading-relaxed mb-6">
+            <Sparkles className="w-10 h-10 sm:w-12 sm:h-12 text-rose-400 mx-auto mb-4 animate-pulse-ring rounded-full" />
+            <h2 className="font-heading text-xl sm:text-2xl font-bold mb-4 text-white drop-shadow-md">Созвездие Открыто!</h2>
+            <p className="text-rose-100/90 font-body text-xs sm:text-sm leading-relaxed mb-6">
               Расстояние в 3700 км не имеет значения, когда наши руки тянутся друг к другу.<br/><br/>
-              <span className="font-hand text-2xl text-rose-300 rotate-[-2deg] inline-block">Только моя принцесса ❤️</span>
+              <span className="font-hand text-xl sm:text-2xl text-rose-300 rotate-[-2deg] inline-block mt-2">Только моя принцесса ❤️</span>
             </p>
-            <button onClick={() => setSecretUnlocked(false)} className="premium-btn w-full py-3 rounded-xl text-white text-sm font-bold tracking-wider">
+            <button onClick={() => setSecretUnlocked(false)} className="premium-btn w-full py-3 rounded-xl text-white text-xs sm:text-sm font-bold tracking-wider">
               Продолжить магию
             </button>
           </div>
@@ -327,8 +322,6 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState('');
-  
-  // Хост = тот, к кому подключились. Гость = тот, кто ввел код.
   const [isHost, setIsHost] = useState(true); 
 
   useEffect(() => {
@@ -339,7 +332,6 @@ export default function App() {
       newPeer.on('open', (id) => setPeerId(id));
 
       newPeer.on('connection', (conn) => {
-        // К нам подключились - значит мы Хост
         setIsHost(true);
         conn.on('open', () => setConnection(conn));
         conn.on('close', () => setConnection(null));
@@ -364,7 +356,6 @@ export default function App() {
       setError('');
       try {
         const conn = peer.connect(remotePeerId);
-        // Мы сами ввели код - значит мы Гость (Вика)
         setIsHost(false);
         
         conn.on('open', () => {
@@ -389,72 +380,73 @@ export default function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (connection) {
-    return (
-      <div className="min-h-screen relative font-body bg-[#080614]">
+  return (
+    <div className="w-full min-h-[100dvh] text-white relative font-body flex flex-col bg-[#080614] overflow-x-hidden">
+      
+      {/* ── Общий слой UI поверх всего (Таймер и Музыка) ── */}
+      <div className="fixed top-0 left-0 right-0 z-[9999] pointer-events-none p-4 sm:p-6 pb-0 pt-[calc(env(safe-area-inset-top,1rem)+1rem)] flex justify-between items-start">
          <TimeCounter />
          <MusicPlayer isPlaying={isMusicPlaying} toggleMusic={() => setIsMusicPlaying(!isMusicPlaying)} setMusicState={setIsMusicPlaying} />
-         <SharedCanvas connection={connection} onDisconnect={() => setConnection(null)} isHost={isHost} />
       </div>
-    );
-  }
 
-  // Убрал overflow-hidden отсюда, чтобы на мобилках лобби можно было скроллить, если оно не влезает
-  return (
-    <div className="min-h-screen text-white relative font-body flex flex-col pb-10">
-      <div className="premium-bg fixed inset-0 z-0 pointer-events-none" />
-      <MagicParticles />
-      
-      <TimeCounter />
-      <MusicPlayer isPlaying={isMusicPlaying} toggleMusic={() => setIsMusicPlaying(!isMusicPlaying)} setMusicState={setIsMusicPlaying} />
-      
-      <main className="relative z-10 w-full flex-grow flex items-center justify-center p-4 pt-24 sm:pt-20">
-        <div className="premium-glass p-6 sm:p-10 rounded-[2rem] w-full max-w-sm animate-blur-fade flex flex-col items-center">
+      {/* ── Состояние 1: Экран Холста ── */}
+      {connection ? (
+        <SharedCanvas connection={connection} onDisconnect={() => setConnection(null)} isHost={isHost} />
+      ) : (
+        /* ── Состояние 2: Лобби (Скроллируемое на мобилках) ── */
+        <>
+          <div className="premium-bg fixed inset-0 z-0 pointer-events-none" />
+          <MagicParticles />
           
-          <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,107,158,0.2)]">
-            <MessageCircleHeart className="w-8 h-8 text-rose-400" />
-          </div>
-          
-          <h1 className="font-heading text-3xl font-bold mb-2 text-white text-center drop-shadow-md">
-            Живое Касание
-          </h1>
-          <p className="text-white/60 mb-8 text-center text-sm px-2 leading-relaxed font-light">
-            Мост через 3 700 км. Отправь код половинке, чтобы прикоснуться сквозь экран.
-          </p>
+          <main className="relative z-10 w-full flex-grow flex items-center justify-center p-4 pt-32 pb-[env(safe-area-inset-bottom,2rem)]">
+            <div className="premium-glass p-6 sm:p-8 rounded-[2rem] w-full max-w-sm animate-blur-fade flex flex-col items-center">
+              
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-5 shadow-[0_0_30px_rgba(255,107,158,0.2)]">
+                <MessageCircleHeart className="w-7 h-7 sm:w-8 sm:h-8 text-rose-400" />
+              </div>
+              
+              <h1 className="font-heading text-2xl sm:text-3xl font-bold mb-2 text-white text-center drop-shadow-md">
+                Живое Касание
+              </h1>
+              <p className="text-white/60 mb-6 text-center text-xs sm:text-sm px-2 leading-relaxed font-light">
+                Мост через 3 700 км. Отправь код половинке, чтобы прикоснуться сквозь экран.
+              </p>
 
-          <div className="w-full bg-black/20 p-5 rounded-2xl border border-white/5 mb-6 relative group">
-            <p className="text-[10px] text-rose-200/50 uppercase tracking-widest font-bold mb-3 text-center">Твой личный код</p>
-            <div className="flex items-center justify-between gap-3 bg-white/5 rounded-xl p-1 pl-4 border border-white/10">
-              <span className="text-sm font-mono text-rose-300 font-medium tracking-wide truncate">
-                {peerId || '...'}
-              </span>
-              <button onClick={copyToClipboard} className="w-10 h-10 rounded-lg bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 flex items-center justify-center transition-all">
-                {copied ? <Check size={18} /> : <Copy size={18} />}
-              </button>
+              <div className="w-full bg-black/20 p-4 sm:p-5 rounded-2xl border border-white/5 mb-6 relative group">
+                <p className="text-[9px] sm:text-[10px] text-rose-200/50 uppercase tracking-widest font-bold mb-3 text-center">Твой личный код</p>
+                <div className="flex items-center justify-between gap-3 bg-white/5 rounded-xl p-1 pl-4 border border-white/10">
+                  <span className="text-xs sm:text-sm font-mono text-rose-300 font-medium tracking-wide truncate">
+                    {peerId || '...'}
+                  </span>
+                  <button onClick={copyToClipboard} className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 flex items-center justify-center transition-all shrink-0">
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="w-full flex flex-col gap-3">
+                <input 
+                  type="text" 
+                  placeholder="Введи её код..." 
+                  value={remotePeerId}
+                  onChange={(e) => setRemotePeerId(e.target.value)}
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-xl border border-white/10 bg-black/30 text-white text-center text-xs sm:text-sm focus:outline-none focus:border-rose-400/50 focus:bg-black/50 transition-all font-mono placeholder:text-white/20 placeholder:font-body"
+                />
+                {error && <p className="text-[10px] sm:text-xs text-rose-400 text-center">{error}</p>}
+                
+                <button 
+                  onClick={handleConnect}
+                  disabled={!remotePeerId || isConnecting}
+                  className="premium-btn w-full py-3 sm:py-4 mt-1 rounded-xl text-white uppercase tracking-widest text-[10px] sm:text-xs font-bold disabled:opacity-50"
+                >
+                  {isConnecting ? 'Соединяем...' : 'Прикоснуться'}
+                </button>
+              </div>
+
             </div>
-          </div>
-
-          <div className="w-full flex flex-col gap-3">
-            <input 
-              type="text" 
-              placeholder="Введи её код..." 
-              value={remotePeerId}
-              onChange={(e) => setRemotePeerId(e.target.value)}
-              className="w-full px-5 py-4 rounded-xl border border-white/10 bg-black/30 text-white text-center text-sm focus:outline-none focus:border-rose-400/50 focus:bg-black/50 transition-all font-mono placeholder:text-white/20 placeholder:font-body"
-            />
-            {error && <p className="text-xs text-rose-400 text-center">{error}</p>}
-            
-            <button 
-              onClick={handleConnect}
-              disabled={!remotePeerId || isConnecting}
-              className="premium-btn w-full py-4 mt-2 rounded-xl text-white uppercase tracking-widest text-xs font-bold disabled:opacity-50"
-            >
-              {isConnecting ? 'Соединяем...' : 'Прикоснуться'}
-            </button>
-          </div>
-
-        </div>
-      </main>
+          </main>
+        </>
+      )}
     </div>
   );
 }
