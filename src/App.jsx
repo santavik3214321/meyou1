@@ -1,76 +1,61 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, VolumeX, Heart, Copy, Check, Users } from 'lucide-react';
+import { Volume2, VolumeX, Heart, Copy, Check, Sparkles, MessageCircleHeart, X } from 'lucide-react';
 import { Peer } from 'peerjs';
 
-// ─── Компонент: Летающие Лепестки / Волшебная Пыльца ───────
+// ─── Компонент: Летающие Частицы ───────────────────────────
 function MagicParticles() {
-  const [petals, setPetals] = useState([]);
+  const [particles, setParticles] = useState([]);
   useEffect(() => {
-    const newPetals = Array.from({ length: 30 }).map((_, i) => ({
+    const newParticles = Array.from({ length: 40 }).map((_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
-      animationDuration: `${10 + Math.random() * 15}s`,
+      animationDuration: `${15 + Math.random() * 20}s`,
       animationDelay: `${Math.random() * 10}s`,
-      opacity: 0.3 + Math.random() * 0.5,
-      scale: 0.5 + Math.random() * 0.8,
+      opacity: 0.1 + Math.random() * 0.3,
+      scale: 0.2 + Math.random() * 0.5,
     }));
-    setPetals(newPetals);
+    setParticles(newParticles);
   }, []);
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      {petals.map(p => (
-        <div key={p.id} className="petal" style={{ left: p.left, animation: `float-petal ${p.animationDuration} linear infinite`, animationDelay: p.animationDelay, opacity: p.opacity, transform: `scale(${p.scale})` }} />
+      {particles.map(p => (
+        <div key={p.id} className="particle" style={{ left: p.left, width: '10px', height: '10px', animation: `float-particle ${p.animationDuration} linear infinite`, animationDelay: p.animationDelay, opacity: p.opacity, transform: `scale(${p.scale})` }} />
       ))}
     </div>
   );
 }
 
-// ─── Компонент: Счетчик Времени ──────────────────────────
+// ─── Компонент: Счетчик Времени (Компактный для Mobile) ─────
 function TimeCounter() {
-  const [timePassed, setTimePassed] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [timePassed, setTimePassed] = useState({ days: 0, hours: 0, minutes: 0 });
   useEffect(() => {
     const startDate = new Date('2026-08-05T00:00:00+04:00').getTime();
     const updateTimer = () => {
-      const now = new Date().getTime();
-      const diff = now - startDate;
+      const diff = new Date().getTime() - startDate;
       if (diff > 0) {
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((diff / 1000 / 60) % 60);
-        const seconds = Math.floor((diff / 1000) % 60);
-        setTimePassed({ days, hours, minutes, seconds });
+        setTimePassed({
+          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((diff / 1000 / 60) % 60)
+        });
       }
     };
     updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    const interval = setInterval(updateTimer, 60000); // Update every minute
     return () => clearInterval(interval);
   }, []);
   return (
-    <div className="fixed top-4 left-4 sm:top-6 sm:left-6 z-[100] glass px-4 py-2 sm:px-5 sm:py-2.5 rounded-[1.25rem] sm:rounded-full flex items-center justify-center gap-3 sm:gap-4 shadow-sm border border-white/60 animate-blur-fade">
-      <div className="flex flex-col items-center min-w-[28px]">
-        <span className="text-sm sm:text-base font-bold text-rose-500 font-heading leading-none">{timePassed.days}</span>
-        <span className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-widest leading-none mt-1.5">дней</span>
-      </div>
-      <div className="w-px h-5 sm:h-6 bg-rose-200/60"></div>
-      <div className="flex flex-col items-center min-w-[20px]">
-        <span className="text-sm sm:text-base font-bold text-rose-500 font-heading leading-none">{String(timePassed.hours).padStart(2, '0')}</span>
-        <span className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-widest leading-none mt-1.5">час</span>
-      </div>
-      <div className="w-px h-5 sm:h-6 bg-rose-200/60"></div>
-      <div className="flex flex-col items-center min-w-[20px]">
-        <span className="text-sm sm:text-base font-bold text-rose-500 font-heading leading-none">{String(timePassed.minutes).padStart(2, '0')}</span>
-        <span className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-widest leading-none mt-1.5">мин</span>
-      </div>
-      <div className="w-px h-5 sm:h-6 bg-rose-200/60"></div>
-      <div className="flex flex-col items-center min-w-[20px]">
-        <span className="text-sm sm:text-base font-bold text-rose-500 font-heading leading-none">{String(timePassed.seconds).padStart(2, '0')}</span>
-        <span className="text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-widest leading-none mt-1.5">сек</span>
+    <div className="fixed top-4 left-4 sm:top-6 sm:left-6 z-[100] premium-glass px-4 py-2 rounded-full flex items-center justify-center gap-2 shadow-lg border border-white/10 animate-blur-fade pointer-events-none">
+      <Heart className="w-3.5 h-3.5 text-rose-400 animate-pulse" fill="currentColor" />
+      <div className="flex gap-1.5 items-baseline">
+        <span className="text-sm font-bold text-white tracking-wide">{timePassed.days}д</span>
+        <span className="text-xs text-white/50">{String(timePassed.hours).padStart(2, '0')}:{String(timePassed.minutes).padStart(2, '0')}</span>
       </div>
     </div>
   );
 }
 
-// ─── Компонент: Музыкальный плеер ──────────────────────────
+// ─── Компонент: Музыкальный плеер (Компактный круглый) ──────
 function MusicPlayer({ isPlaying, toggleMusic, setMusicState }) {
   const audioRef = useRef(null);
   useEffect(() => {
@@ -88,12 +73,8 @@ function MusicPlayer({ isPlaying, toggleMusic, setMusicState }) {
   return (
     <>
       <audio ref={audioRef} src="/music/sting.mp3" loop autoPlay />
-      <button onClick={toggleMusic} className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[100] glass px-4 py-2.5 rounded-full flex items-center gap-2 cursor-pointer hover:bg-white/90 transition-all duration-300 border border-white/60 shadow-[0_4px_20px_rgba(244,143,177,0.3)] animate-blur-fade">
-        {isPlaying ? (
-          <><Volume2 className="w-5 h-5 text-rose-500 animate-breathe" /><span className="text-xs font-bold text-rose-500 uppercase tracking-wider hidden sm:inline">Музыка</span></>
-        ) : (
-          <><VolumeX className="w-5 h-5 text-gray-400" /><span className="text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:inline">Звук</span></>
-        )}
+      <button onClick={toggleMusic} className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-[100] premium-glass w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all duration-500 border shadow-lg ${isPlaying ? 'border-rose-400/50 animate-pulse-ring' : 'border-white/10 opacity-70'} animate-blur-fade hover:scale-110 active:scale-90`}>
+        {isPlaying ? <Volume2 className="w-4 h-4 text-rose-400" /> : <VolumeX className="w-4 h-4 text-gray-400" />}
       </button>
     </>
   );
@@ -104,7 +85,13 @@ function SharedCanvas({ connection, onDisconnect }) {
   const canvasRef = useRef(null);
   const localPos = useRef({ x: -100, y: -100 });
   const remotePos = useRef({ x: -100, y: -100 });
-  const [hearts, setHearts] = useState([]);
+  const ripples = useRef([]);
+  
+  // Созвездие (Секрет)
+  const isSyncing = useRef(false);
+  const syncStartTime = useRef(0);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [secretUnlocked, setSecretUnlocked] = useState(false);
   
   useEffect(() => {
     if (!connection) return;
@@ -114,6 +101,10 @@ function SharedCanvas({ connection, onDisconnect }) {
         const y = data.y * window.innerHeight;
         remotePos.current = { x, y };
         checkCollision(localPos.current.x, localPos.current.y, x, y);
+      }
+      if (data.type === 'unlock') {
+        setSecretUnlocked(true);
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
       }
     };
     connection.on('data', handleData);
@@ -149,27 +140,46 @@ function SharedCanvas({ connection, onDisconnect }) {
   
   const handlePointerUp = () => {
      localPos.current = { x: -100, y: -100 };
-     if (connection && connection.open) {
-        connection.send({ type: 'pointer', x: -1, y: -1 });
-     }
+     if (connection && connection.open) connection.send({ type: 'pointer', x: -1, y: -1 });
+     isSyncing.current = false;
+     setSyncProgress(0);
   }
   
+  const createRipple = (x, y) => {
+    ripples.current.push({ x, y, radius: 0, alpha: 1, color: '#f48fb1' });
+    if (navigator.vibrate) navigator.vibrate(50);
+  };
+
   const checkCollision = (lx, ly, rx, ry) => {
     if (lx < 0 || rx < 0) return; 
     const dist = Math.hypot(lx - rx, ly - ry);
+    
     if (dist < 50) {
-      setHearts(prev => {
-        if (prev.length > 0 && Date.now() - prev[prev.length-1].time < 1500) return prev;
-        if (navigator.vibrate) navigator.vibrate(50);
-        const id = Date.now();
-        setTimeout(() => {
-          setHearts(h => h.filter(heart => heart.id !== id));
-        }, 3000);
-        return [...prev, { id, x: (lx+rx)/2, y: (ly+ry)/2, time: Date.now() }];
-      });
+      if (!isSyncing.current) {
+         isSyncing.current = true;
+         syncStartTime.current = Date.now();
+         createRipple((lx+rx)/2, (ly+ry)/2);
+      } else {
+         const elapsed = Date.now() - syncStartTime.current;
+         const progress = Math.min((elapsed / 4000) * 100, 100);
+         setSyncProgress(progress);
+         
+         if (elapsed > 4000 && !secretUnlocked) {
+            setSecretUnlocked(true);
+            setSyncProgress(0);
+            if (connection && connection.open) connection.send({ type: 'unlock' });
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+         }
+      }
+    } else {
+      if (isSyncing.current) {
+        isSyncing.current = false;
+        setSyncProgress(0);
+      }
     }
   };
 
+  // Canvas Render Loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -184,24 +194,48 @@ function SharedCanvas({ connection, onDisconnect }) {
     
     let animationId;
     const render = () => {
-      ctx.fillStyle = 'rgba(15, 10, 30, 0.15)'; 
+      // Плавное затухание для эффекта неоновых шлейфов
+      ctx.fillStyle = 'rgba(8, 6, 20, 0.08)'; 
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
+      // Рисуем волны (Ripples)
+      for (let i = ripples.current.length - 1; i >= 0; i--) {
+        const r = ripples.current[i];
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 107, 158, ${r.alpha})`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        r.radius += 4;
+        r.alpha -= 0.02;
+        if (r.alpha <= 0) ripples.current.splice(i, 1);
+      }
+
+      // Чужой след (Розовый неон)
       if (remotePos.current.x >= 0) {
         ctx.beginPath();
-        ctx.arc(remotePos.current.x, remotePos.current.y, 10, 0, Math.PI * 2);
-        ctx.fillStyle = '#ff6b9e';
-        ctx.shadowColor = '#ff6b9e';
-        ctx.shadowBlur = 25;
+        ctx.arc(remotePos.current.x, remotePos.current.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff3385';
+        ctx.shadowColor = '#ff3385';
+        ctx.shadowBlur = 20;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(remotePos.current.x, remotePos.current.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
         ctx.fill();
       }
 
+      // Твой след (Голубой неон)
       if (localPos.current.x >= 0) {
         ctx.beginPath();
-        ctx.arc(localPos.current.x, localPos.current.y, 10, 0, Math.PI * 2);
-        ctx.fillStyle = '#00f0ff';
-        ctx.shadowColor = '#00f0ff';
-        ctx.shadowBlur = 25;
+        ctx.arc(localPos.current.x, localPos.current.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#00e5ff';
+        ctx.shadowColor = '#00e5ff';
+        ctx.shadowBlur = 20;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(localPos.current.x, localPos.current.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
         ctx.fill();
       }
       
@@ -218,7 +252,7 @@ function SharedCanvas({ connection, onDisconnect }) {
   return (
     <div 
       className="fixed inset-0 touch-none cursor-crosshair z-0" 
-      style={{ backgroundColor: '#0f0a1e' }}
+      style={{ backgroundColor: '#080614' }}
       onPointerMove={handlePointerMove}
       onPointerDown={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -226,22 +260,58 @@ function SharedCanvas({ connection, onDisconnect }) {
       onTouchMove={handlePointerMove}
       onTouchStart={handlePointerMove}
       onTouchEnd={handlePointerUp}
+      onTouchCancel={handlePointerUp}
     >
       <canvas ref={canvasRef} className="block w-full h-full" />
       
-      {hearts.map(h => (
+      {/* Прогресс-бар синхронизации */}
+      {syncProgress > 0 && !secretUnlocked && (
         <div 
-          key={h.id}
-          className="absolute pointer-events-none animate-photo-3d z-50"
-          style={{ left: h.x, top: h.y, transform: 'translate(-50%, -50%)' }}
+          className="absolute pointer-events-none transition-all duration-100 ease-out"
+          style={{ 
+            left: (localPos.current.x + remotePos.current.x)/2, 
+            top: (localPos.current.y + remotePos.current.y)/2, 
+            transform: 'translate(-50%, -50%)' 
+          }}
         >
-          <Heart className="text-rose-500 w-24 h-24 drop-shadow-[0_0_40px_rgba(244,143,177,1)]" fill="#f48fb1" />
+          <svg width="80" height="80" className="animate-pulse">
+            <circle cx="40" cy="40" r="36" fill="none" stroke="rgba(255,107,158,0.2)" strokeWidth="4" />
+            <circle cx="40" cy="40" r="36" fill="none" stroke="#ff6b9e" strokeWidth="4" 
+                    strokeDasharray="226" strokeDashoffset={226 - (226 * syncProgress) / 100}
+                    className="transition-all duration-100" style={{ transformOrigin: 'center', transform: 'rotate(-90deg)' }} />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+             <Heart className="w-8 h-8 text-rose-500 animate-breathe" fill="#f48fb1" />
+          </div>
         </div>
-      ))}
+      )}
       
-      <div className="absolute top-32 left-1/2 -translate-x-1/2 text-white/50 text-sm tracking-widest uppercase text-center font-bold font-body animate-breathe pointer-events-none">
-        Коснитесь друг друга сквозь 3700 км...
-      </div>
+      {/* Подсказка */}
+      {!secretUnlocked && (
+        <div className="absolute top-20 sm:top-24 left-1/2 -translate-x-1/2 text-white/40 text-[10px] sm:text-xs tracking-[0.3em] uppercase text-center font-bold font-body animate-breathe pointer-events-none w-[90%]">
+          Коснитесь друг друга и не отпускайте
+        </div>
+      )}
+
+      {/* Модальное окно с секретом */}
+      {secretUnlocked && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-blur-fade pointer-events-auto">
+          <div className="premium-glass p-8 rounded-3xl max-w-sm w-full text-center relative animate-pop-up border border-rose-400/30 shadow-[0_0_50px_rgba(255,107,158,0.2)]">
+            <button onClick={() => setSecretUnlocked(false)} className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors">
+              <X size={20} />
+            </button>
+            <Sparkles className="w-12 h-12 text-rose-400 mx-auto mb-4 animate-pulse-ring rounded-full" />
+            <h2 className="font-heading text-2xl font-bold mb-4 text-white drop-shadow-md">Созвездие Открыто!</h2>
+            <p className="text-rose-100/90 font-body text-sm leading-relaxed mb-6">
+              Расстояние в 3700 км не имеет значения, когда наши руки тянутся друг к другу.<br/><br/>
+              <span className="font-hand text-2xl text-rose-300 rotate-[-2deg] inline-block">Только моя принцесса ❤️</span>
+            </p>
+            <button onClick={() => setSecretUnlocked(false)} className="premium-btn w-full py-3 rounded-xl text-white text-sm font-bold tracking-wider">
+              Продолжить магию
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -259,30 +329,26 @@ export default function App() {
 
   useEffect(() => {
     try {
-      const id = 'vika-sv-love-' + Math.random().toString(36).substring(2, 9);
+      const id = 'vika-sv-love-' + Math.random().toString(36).substring(2, 6);
       const newPeer = new Peer(id);
       
-      newPeer.on('open', (id) => {
-        setPeerId(id);
-      });
+      newPeer.on('open', (id) => setPeerId(id));
 
       newPeer.on('connection', (conn) => {
-        conn.on('open', () => {
-          setConnection(conn);
-        });
+        conn.on('open', () => setConnection(conn));
         conn.on('close', () => setConnection(null));
       });
       
       newPeer.on('error', (err) => {
-        setError('Ошибка соединения: ' + err.message);
+        setError('Ошибка сети. Проверьте интернет.');
         setIsConnecting(false);
       });
 
       setPeer(newPeer);
       return () => newPeer.destroy();
     } catch (e) {
-      console.error("PeerJS initialization failed:", e);
-      setError('Ошибка запуска сети: ' + e.message);
+      console.error(e);
+      setError('Ошибка сети.');
     }
   }, []);
 
@@ -290,19 +356,21 @@ export default function App() {
     if (peer && remotePeerId) {
       setIsConnecting(true);
       setError('');
-      const conn = peer.connect(remotePeerId);
-      
-      conn.on('open', () => {
-        setConnection(conn);
-        setIsConnecting(false);
-      });
-      
-      conn.on('error', (err) => {
-        setError('Не удалось подключиться: ' + err.message);
-        setIsConnecting(false);
-      });
-      
-      conn.on('close', () => setConnection(null));
+      try {
+        const conn = peer.connect(remotePeerId);
+        conn.on('open', () => {
+          setConnection(conn);
+          setIsConnecting(false);
+        });
+        conn.on('error', () => {
+          setError('Связь прервалась.');
+          setIsConnecting(false);
+        });
+        conn.on('close', () => setConnection(null));
+      } catch (e) {
+         setError('Не удалось создать канал.');
+         setIsConnecting(false);
+      }
     }
   };
 
@@ -312,77 +380,71 @@ export default function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // 1) Если уже соединены — показываем общий холст
   if (connection) {
     return (
-      <div className="min-h-screen overflow-hidden relative font-body">
+      <div className="min-h-screen overflow-hidden relative font-body bg-[#080614]">
          <TimeCounter />
+         <MusicPlayer isPlaying={isMusicPlaying} toggleMusic={() => setIsMusicPlaying(!isMusicPlaying)} setMusicState={setIsMusicPlaying} />
          <SharedCanvas connection={connection} onDisconnect={() => setConnection(null)} />
-         <div className="opacity-100 transition-opacity duration-1000 z-50">
-           <MusicPlayer isPlaying={isMusicPlaying} toggleMusic={() => setIsMusicPlaying(!isMusicPlaying)} setMusicState={setIsMusicPlaying} />
-         </div>
       </div>
     );
   }
 
-  // 2) Экран Лобби для соединения
   return (
-    <div className="min-h-screen text-text-main overflow-x-hidden relative font-body selection:bg-rose-200 flex flex-col">
-      <div className="magic-bg fixed inset-0 z-0" />
-      <div className="fixed inset-0 z-0 pointer-events-none"><MagicParticles /></div>
+    <div className="min-h-screen text-white overflow-hidden relative font-body flex flex-col">
+      <div className="premium-bg" />
+      <MagicParticles />
       
       <TimeCounter />
+      <MusicPlayer isPlaying={isMusicPlaying} toggleMusic={() => setIsMusicPlaying(!isMusicPlaying)} setMusicState={setIsMusicPlaying} />
       
-      <main className="relative z-10 w-full flex-grow flex items-center justify-center py-10 px-4 sm:px-8">
-        <div className="quest-container animate-blur-fade text-center max-w-md w-full glass p-6 sm:p-8">
-          <Heart className="w-16 h-16 text-rose-400 mx-auto mb-6 animate-breathe drop-shadow-[0_0_20px_rgba(244,143,177,0.6)]" fill="currentColor" />
-          <h1 className="font-heading text-3xl font-medium mb-2 text-gray-800">
+      <main className="relative z-10 w-full flex-grow flex items-center justify-center p-4">
+        <div className="premium-glass p-6 sm:p-10 rounded-[2rem] w-full max-w-sm animate-blur-fade flex flex-col items-center">
+          
+          <div className="w-16 h-16 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,107,158,0.2)]">
+            <MessageCircleHeart className="w-8 h-8 text-rose-400" />
+          </div>
+          
+          <h1 className="font-heading text-3xl font-bold mb-2 text-white text-center drop-shadow-md">
             Живое Касание
           </h1>
-          <p className="text-gray-500 mb-8 leading-relaxed">
-            Создайте прямое соединение между Кемерово и Ереваном, чтобы коснуться друг друга.
+          <p className="text-white/60 mb-8 text-center text-sm px-2 leading-relaxed font-light">
+            Мост через 3 700 км. Отправь код половинке, чтобы прикоснуться сквозь экран.
           </p>
 
-          <div className="mb-8 p-4 bg-white/50 rounded-2xl border border-rose-100 relative">
-            <p className="text-xs text-gray-500 mb-2 uppercase tracking-widest font-bold">Твой секретный код:</p>
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-sm sm:text-base font-mono text-rose-500 font-bold break-all bg-white px-3 py-1 rounded shadow-sm">
-                {peerId || 'Создаю канал...'}
+          <div className="w-full bg-black/20 p-5 rounded-2xl border border-white/5 mb-6 relative group">
+            <p className="text-[10px] text-rose-200/50 uppercase tracking-widest font-bold mb-3 text-center">Твой личный код</p>
+            <div className="flex items-center justify-between gap-3 bg-white/5 rounded-xl p-1 pl-4 border border-white/10">
+              <span className="text-sm font-mono text-rose-300 font-medium tracking-wide truncate">
+                {peerId || '...'}
               </span>
-              {peerId && (
-                <button onClick={copyToClipboard} className="p-2 bg-white hover:bg-rose-50 shadow-sm rounded-full transition-colors text-rose-400 shrink-0">
-                  {copied ? <Check size={18} /> : <Copy size={18} />}
-                </button>
-              )}
+              <button onClick={copyToClipboard} className="w-10 h-10 rounded-lg bg-rose-500/20 hover:bg-rose-500/40 text-rose-300 flex items-center justify-center transition-all">
+                {copied ? <Check size={18} /> : <Copy size={18} />}
+              </button>
             </div>
-            <p className="text-xs text-gray-400 mt-3 font-medium">Отправь этот код своей половинке</p>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <p className="text-xs text-gray-500 uppercase tracking-widest font-bold text-left px-2">Или введи её код:</p>
+          <div className="w-full flex flex-col gap-3">
             <input 
               type="text" 
-              placeholder="Код для подключения..." 
+              placeholder="Введи её код..." 
               value={remotePeerId}
               onChange={(e) => setRemotePeerId(e.target.value)}
-              className="w-full px-5 py-3 rounded-xl border border-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-400 bg-white/80 text-center text-sm sm:text-base shadow-inner font-mono text-gray-600"
+              className="w-full px-5 py-4 rounded-xl border border-white/10 bg-black/30 text-white text-center text-sm focus:outline-none focus:border-rose-400/50 focus:bg-black/50 transition-all font-mono placeholder:text-white/20 placeholder:font-body"
             />
-            {error && <p className="text-xs text-rose-500 mt-1">{error}</p>}
+            {error && <p className="text-xs text-rose-400 text-center">{error}</p>}
             
             <button 
               onClick={handleConnect}
               disabled={!remotePeerId || isConnecting}
-              className="glass-btn w-full py-4 mt-2 rounded-xl text-rose-500 uppercase tracking-widest text-sm font-bold shadow-[0_10px_30px_rgba(244,143,177,0.3)] hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:shadow-none flex items-center justify-center gap-2"
+              className="premium-btn w-full py-4 mt-2 rounded-xl text-white uppercase tracking-widest text-xs font-bold disabled:opacity-50"
             >
-              {isConnecting ? 'Подключение...' : <><Users size={18} /> Соединить сердца</>}
+              {isConnecting ? 'Соединяем...' : 'Прикоснуться'}
             </button>
           </div>
+
         </div>
       </main>
-
-      <div className="opacity-100 transition-opacity duration-1000 z-50">
-        <MusicPlayer isPlaying={isMusicPlaying} toggleMusic={() => setIsMusicPlaying(!isMusicPlaying)} setMusicState={setIsMusicPlaying} />
-      </div>
     </div>
   );
 }

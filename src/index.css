@@ -1,183 +1,119 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Caveat:wght@400;500;700&display=swap');
-
-/* ============================================
-   Интерактивный Квест Любви — Romantic Pastel
-   ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;1,400&family=Caveat:wght@400;700&display=swap');
 
 @theme {
-  --color-pastel-bg: #fff5f8;
-  --color-pastel-pink: #ffb6c1;
-  --color-pastel-peach: #ffdab9;
-  --color-pastel-rose: #f48fb1;
-  --color-text-main: #5a4b56;
-  --color-text-light: #9c8e98;
-  
-  --color-glass: rgba(255, 255, 255, 0.65);
-  --color-glass-border: rgba(255, 255, 255, 1);
-  --color-glass-hover: rgba(255, 255, 255, 0.9);
-
   --font-heading: 'Lora', Georgia, serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-hand: 'Caveat', cursive;
 }
 
-@keyframes blur-fade-in {
-  from { opacity: 0; filter: blur(15px); transform: scale(0.95); }
-  to { opacity: 1; filter: blur(0); transform: scale(1); }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none; /* Crucial for canvas drawing on mobile */
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: var(--font-body);
+  background-color: #080614;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
 }
 
-@keyframes breathe {
-  0%, 100% { transform: scale(1); box-shadow: 0 10px 30px rgba(244, 143, 177, 0.3); }
-  50% { transform: scale(1.05); box-shadow: 0 20px 50px rgba(244, 143, 177, 0.6); }
-}
-
-@keyframes float-petal {
-  0% { transform: translateY(-10vh) rotate(0deg) translateX(0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(110vh) rotate(360deg) translateX(100px); opacity: 0; }
-}
-
+/* Animations */
 @keyframes bg-breathe {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
 
-@keyframes shake-soft {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  50% { transform: translateX(5px); }
-  75% { transform: translateX(-5px); }
+@keyframes float-particle {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10% { opacity: 0.5; }
+  50% { transform: translateY(-50vh) translateX(20px) scale(1.5); opacity: 0.8; }
+  90% { opacity: 0.5; }
+  100% { transform: translateY(-100vh) translateX(-20px) scale(1); opacity: 0; }
 }
 
-@keyframes gift-bounce {
-  0%, 100% { transform: translateY(0) rotate(0); }
-  25% { transform: translateY(-8px) rotate(-3deg); }
-  50% { transform: translateY(0) rotate(0); }
-  75% { transform: translateY(-4px) rotate(3deg); }
+@keyframes blur-fade-in {
+  from { opacity: 0; filter: blur(20px); transform: scale(0.95); }
+  to { opacity: 1; filter: blur(0); transform: scale(1); }
 }
 
-@keyframes photo-reveal-3d {
-  0% { transform: translateY(80px) scale(0.6) rotateX(20deg) rotateZ(-10deg); opacity: 0; filter: blur(10px); }
-  100% { transform: translateY(0) scale(1) rotateX(0deg) rotateZ(3deg); opacity: 1; filter: blur(0); }
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(255, 107, 158, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(255, 107, 158, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 107, 158, 0); }
 }
 
 @keyframes pop-up {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1.05); }
+  0% { transform: scale(0.8) translateY(20px); opacity: 0; filter: blur(10px); }
+  100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
 }
 
-html {
-  scroll-behavior: smooth;
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 1; border-width: 10px; }
+  100% { transform: scale(4); opacity: 0; border-width: 0px; }
 }
 
-body {
-  font-family: var(--font-body);
-  background-color: var(--color-pastel-bg);
-  color: var(--color-text-main);
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Дышащий сказочный фон */
-.magic-bg {
+/* Classes */
+.premium-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(-45deg, #fff5f8, #ffe4e1, #fff0f5, #ffdab9);
+  background: linear-gradient(-45deg, #0a0614, #1a0b2e, #130a1c, #0a0512);
   background-size: 400% 400%;
-  animation: bg-breathe 15s ease infinite;
+  animation: bg-breathe 20s ease infinite;
   z-index: 0;
 }
 
-/* Морозное воздушное стекло */
-.glass {
-  background: var(--color-glass);
-  backdrop-filter: blur(20px) saturate(1.2);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
-  border: 1px solid var(--color-glass-border);
-  box-shadow: 0 10px 40px rgba(244, 143, 177, 0.15);
-  border-radius: 24px;
+.premium-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(30px) saturate(1.5);
+  -webkit-backdrop-filter: blur(30px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-.glass-btn {
-  background: rgba(255, 255, 255, 0.7);
-  border: 2px solid transparent;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-  color: var(--color-text-main);
+.premium-btn {
+  background: linear-gradient(135deg, rgba(255,107,158,0.2) 0%, rgba(255,107,158,0.05) 100%);
+  border: 1px solid rgba(255,107,158,0.3);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
+  overflow: hidden;
 }
-.glass-btn:hover {
-  background: rgba(255, 255, 255, 0.95);
+
+.premium-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.premium-btn:hover::before {
+  left: 150%;
+}
+
+.premium-btn:hover {
+  background: rgba(255,107,158,0.15);
   transform: translateY(-2px);
-}
-.glass-btn:active {
-  transform: translateY(0) scale(0.98);
-  border-color: #f48fb1;
-  box-shadow: 0 0 0 4px rgba(244, 143, 177, 0.3);
+  box-shadow: 0 10px 30px rgba(255,107,158,0.2);
+  border-color: rgba(255,107,158,0.6);
 }
 
-/* Анимация розовой линии при явном выборе (ошибка или выбранный пункт) */
-@keyframes select-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(244, 143, 177, 0.6); }
-  70% { box-shadow: 0 0 0 10px rgba(244, 143, 177, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(244, 143, 177, 0); }
-}
-
-.selected-choice {
-  border-color: #f48fb1 !important;
-  animation: select-pulse 1.5s infinite;
-  background: rgba(255, 245, 248, 0.9) !important;
-}
-
-.text-gradient-rose {
-  background: linear-gradient(135deg, #f48fb1 0%, #ff8a65 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.premium-btn:active {
+  transform: translateY(1px) scale(0.98);
 }
 
 .animate-blur-fade { animation: blur-fade-in 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-.animate-breathe { animation: breathe 3s infinite ease-in-out; }
-.animate-shake-soft { animation: shake-soft 0.4s ease-in-out; }
-.animate-gift-bounce { animation: gift-bounce 2s infinite ease-in-out; }
-.animate-photo-3d { animation: photo-reveal-3d 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-.animate-pop { animation: pop-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.animate-pulse-ring { animation: pulse-ring 2s infinite; }
+.animate-pop-up { animation: pop-up 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
-.quest-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  width: 100vw;
-  position: relative;
-  z-index: 10;
-  padding: 20px;
-}
-
-.hold-progress-bg {
+.particle {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 6px;
-  background: linear-gradient(90deg, #f48fb1, #ffdab9);
-  transition: width 0.1s linear;
-  border-radius: 6px;
-}
-
-/* Стили для летающих лепестков */
-.petal {
-  position: absolute;
-  top: -10%;
-  width: 15px;
-  height: 15px;
-  background: radial-gradient(circle, #ffb6c1 0%, transparent 80%);
-  border-radius: 50% 0 50% 50%;
-  opacity: 0;
-  z-index: 1;
+  background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
   pointer-events: none;
 }
