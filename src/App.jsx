@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Volume2, VolumeX, Heart, Copy, Check, Users } from 'lucide-react';
-import Peer from 'peerjs';
+import { Peer } from 'peerjs';
 
 // ─── Компонент: Летающие Лепестки / Волшебная Пыльца ───────
 function MagicParticles() {
@@ -258,29 +258,32 @@ export default function App() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Force a specific ID prefix to ensure a clean connection but random suffix
-    const id = 'vika-sv-love-' + Math.random().toString(36).substring(2, 9);
-    const newPeer = new Peer(id);
-    
-    newPeer.on('open', (id) => {
-      setPeerId(id);
-    });
-
-    newPeer.on('connection', (conn) => {
-      // Someone connected to us
-      conn.on('open', () => {
-        setConnection(conn);
+    try {
+      const id = 'vika-sv-love-' + Math.random().toString(36).substring(2, 9);
+      const newPeer = new Peer(id);
+      
+      newPeer.on('open', (id) => {
+        setPeerId(id);
       });
-      conn.on('close', () => setConnection(null));
-    });
-    
-    newPeer.on('error', (err) => {
-      setError('Ошибка соединения: ' + err.message);
-      setIsConnecting(false);
-    });
 
-    setPeer(newPeer);
-    return () => newPeer.destroy();
+      newPeer.on('connection', (conn) => {
+        conn.on('open', () => {
+          setConnection(conn);
+        });
+        conn.on('close', () => setConnection(null));
+      });
+      
+      newPeer.on('error', (err) => {
+        setError('Ошибка соединения: ' + err.message);
+        setIsConnecting(false);
+      });
+
+      setPeer(newPeer);
+      return () => newPeer.destroy();
+    } catch (e) {
+      console.error("PeerJS initialization failed:", e);
+      setError('Ошибка запуска сети: ' + e.message);
+    }
   }, []);
 
   const handleConnect = () => {
