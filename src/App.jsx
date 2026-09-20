@@ -16,7 +16,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const tableRef = ref(db, 'cafe-table-2026');
-const SECRET_PASSWORD = '58';
+const PASSWORDS = {
+  sv: '44',
+  vika: '4',
+};
 
 // ═══════════════════════════════════════════════════════════
 // КОМПОНЕНТ: Звёздное небо
@@ -343,7 +346,7 @@ export default function App() {
   const handleLogin = (e) => {
     e.preventDefault();
     if (!userRole) { setAuthError('Выберите кто вы'); return; }
-    if (password === SECRET_PASSWORD) {
+    if (password === PASSWORDS[userRole]) {
       localStorage.setItem('cafeRole', userRole);
       setAuthError('');
       setIsAuthenticated(true);
@@ -390,7 +393,7 @@ export default function App() {
           <div className="w-16 h-16 rounded-full bg-black/30 border border-white/10 flex items-center justify-center mb-6 shadow-inner">
             <Lock className="w-6 h-6 text-rose-300/70" />
           </div>
-          <h1 className="font-heading text-2xl font-bold text-white mb-1 tracking-wide italic">Stardust Café</h1>
+          <h1 className="font-heading text-2xl font-bold text-white mb-1 tracking-wide italic">SV Café</h1>
           <p className="text-white/35 text-[10px] mb-8 text-center uppercase tracking-[3px]">Только для двоих ✨</p>
 
           <div className="flex w-full gap-3 mb-6">
