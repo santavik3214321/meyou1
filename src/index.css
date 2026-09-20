@@ -42,6 +42,23 @@ html, body {
   100% { transform: translateY(100vh); opacity: 0.2; }
 }
 
+@keyframes candle-flicker {
+  0%, 100% { opacity: 0.18; transform: scale(1); }
+  25% { opacity: 0.22; transform: scale(1.05); }
+  50% { opacity: 0.15; transform: scale(0.97); }
+  75% { opacity: 0.20; transform: scale(1.03); }
+}
+
+@keyframes bokeh-float {
+  0%, 100% { opacity: 0.5; transform: translateY(0); }
+  50% { opacity: 0.3; transform: translateY(-4px); }
+}
+
+@keyframes pop-up {
+  0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
 /* Classes */
 .premium-glass {
   background: rgba(20, 15, 20, 0.4);

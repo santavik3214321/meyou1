@@ -43,7 +43,8 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   
   const [client, setClient] = useState(null);
-  const [tableState, setTableState] = useState(null); // { type, note, from, timestamp }
+  const [tableState, setTableState] = useState({ type: 'empty' }); // Сразу показываем пустой стол
+  const [mqttStatus, setMqttStatus] = useState('connecting'); // 'connecting' | 'ok' | 'error'
   const [isNoteOpen, setIsNoteOpen] = useState(false);
   
   const [isLeavingItem, setIsLeavingItem] = useState(false);
@@ -82,15 +83,31 @@ export default function App() {
     const mqttClient = mqtt.connect('wss://broker.emqx.io:8084/mqtt', {
       clientId: 'cafe-client-' + Math.random().toString(16).substr(2, 8),
       keepalive: 60,
-      clean: true, // Всегда получаем свежее retained сообщение
+      clean: true,
+      connectTimeout: 5000,
     });
     
+    let messageTimeout;
+
     mqttClient.on('connect', () => {
       mqttClient.subscribe(DB_TOPIC, { qos: 1 });
+      // Даем 2 сек на получение retained сообщения
+      messageTimeout = setTimeout(() => {
+        setMqttStatus('ok');
+        // Если ничего не пришло — стол пуст (дефолтное состояние уже { type: 'empty' })
+      }, 2000);
     });
-    
+
+    // Если MQTT вообще не может подключиться за 5 секунд
+    const connectionTimeout = setTimeout(() => {
+      setMqttStatus('error');
+    }, 5000);
+
     mqttClient.on('message', (topic, message) => {
       if (topic === DB_TOPIC) {
+        if (messageTimeout) clearTimeout(messageTimeout);
+        clearTimeout(connectionTimeout);
+        setMqttStatus('ok');
         try {
           const data = JSON.parse(message.toString());
           setTableState(data);
@@ -100,8 +117,17 @@ export default function App() {
       }
     });
 
+    mqttClient.on('error', (err) => {
+      console.error("MQTT Error:", err);
+      setMqttStatus('error');
+    });
+
     setClient(mqttClient);
-    return () => mqttClient.end();
+    return () => {
+      if (messageTimeout) clearTimeout(messageTimeout);
+      clearTimeout(connectionTimeout);
+      mqttClient.end();
+    };
   }, [userRole]);
 
   // Воспроизведение звука дождя
@@ -154,7 +180,7 @@ export default function App() {
           
           <div className="flex w-full gap-3 mb-6">
             <button type="button" onClick={() => setUserRole('sv')} className={`flex-1 py-3 rounded-xl border transition-all text-sm font-medium ${userRole === 'sv' ? 'bg-rose-500/20 border-rose-400/50 text-rose-200' : 'bg-black/30 border-white/10 text-white/50 hover:bg-black/50'}`}>
-              Я — СВ
+              Я — Сурен
             </button>
             <button type="button" onClick={() => setUserRole('vika')} className={`flex-1 py-3 rounded-xl border transition-all text-sm font-medium ${userRole === 'vika' ? 'bg-rose-500/20 border-rose-400/50 text-rose-200' : 'bg-black/30 border-white/10 text-white/50 hover:bg-black/50'}`}>
               Я — Вика
@@ -182,12 +208,56 @@ export default function App() {
   return (
     <div className="min-h-[100dvh] flex flex-col relative font-body bg-[#0b090a] overflow-hidden">
       
-      {/* ФОН КАФЕ */}
-      <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-40 transition-opacity duration-1000"
-        style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1934&auto=format&fit=crop")' }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0b090a] via-transparent to-[#0b090a] z-0" />
+      {/* ═══ РОМАНТИЧНЫЙ ФОН КАФЕ (Pure CSS) ═══ */}
+      <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(180deg, #0d0608 0%, #1a0c10 30%, #140a0d 60%, #0a0507 100%)' }} />
+      
+      {/* Тёплые боке-огни (свечи и фонари) */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Большой тёплый источник света — свеча слева */}
+        <div className="absolute" style={{ bottom: '15%', left: '20%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(255,180,60,0.18) 0%, rgba(255,120,30,0.08) 40%, transparent 70%)', borderRadius: '50%', filter: 'blur(30px)', animation: 'candle-flicker 3s ease-in-out infinite' }} />
+        {/* Свеча справа */}
+        <div className="absolute" style={{ bottom: '20%', right: '15%', width: '250px', height: '250px', background: 'radial-gradient(circle, rgba(255,160,50,0.15) 0%, rgba(255,100,20,0.06) 40%, transparent 70%)', borderRadius: '50%', filter: 'blur(25px)', animation: 'candle-flicker 4s ease-in-out infinite 1s' }} />
+        {/* Общее тёплое свечение центра */}
+        <div className="absolute inset-x-0" style={{ bottom: 0, height: '70%', background: 'radial-gradient(ellipse at 50% 100%, rgba(255,140,40,0.10) 0%, transparent 70%)' }} />
+        
+        {/* Боке — мелкие огни на заднем плане */}
+        {[
+          { l: '8%',  t: '20%', s: 6,  o: 0.5, blur: 4 },
+          { l: '15%', t: '35%', s: 4,  o: 0.4, blur: 3 },
+          { l: '25%', t: '15%', s: 8,  o: 0.3, blur: 6 },
+          { l: '38%', t: '25%', s: 5,  o: 0.5, blur: 4 },
+          { l: '52%', t: '18%', s: 7,  o: 0.35, blur: 5 },
+          { l: '63%', t: '30%', s: 4,  o: 0.45, blur: 3 },
+          { l: '72%', t: '20%', s: 9,  o: 0.3, blur: 7 },
+          { l: '80%', t: '28%', s: 5,  o: 0.5, blur: 4 },
+          { l: '88%', t: '15%', s: 6,  o: 0.4, blur: 5 },
+          { l: '92%', t: '35%', s: 4,  o: 0.3, blur: 3 },
+          { l: '5%',  t: '50%', s: 5,  o: 0.25, blur: 4 },
+          { l: '30%', t: '55%', s: 4,  o: 0.2, blur: 3 },
+          { l: '75%', t: '48%', s: 6,  o: 0.25, blur: 5 },
+          { l: '95%', t: '55%', s: 4,  o: 0.3, blur: 3 },
+        ].map((b, i) => (
+          <div key={i} className="absolute rounded-full" style={{ left: b.l, top: b.t, width: `${b.s}px`, height: `${b.s}px`, background: `rgba(255, ${160 + i * 5}, 60, ${b.o})`, filter: `blur(${b.blur}px)`, animation: `bokeh-float ${2 + i * 0.3}s ease-in-out infinite`, animationDelay: `${i * 0.2}s` }} />
+        ))}
+        
+        {/* Окно с дождём (правый угол) */}
+        <div className="absolute top-0 right-0 w-[40%] h-[55%] overflow-hidden opacity-20">
+          {/* Рамка окна */}
+          <div className="absolute inset-0 border border-white/10" style={{ boxShadow: 'inset 0 0 60px rgba(180,220,255,0.05)' }} />
+          {/* Крестовина окна */}
+          <div className="absolute top-0 bottom-0 left-1/2 w-px bg-white/10" />
+          <div className="absolute left-0 right-0 top-1/2 h-px bg-white/10" />
+          {/* Холодный свет с улицы */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(100,140,200,0.08) 0%, transparent 60%)' }} />
+        </div>
+
+        {/* Поверхность стола */}
+        <div className="absolute bottom-0 left-0 right-0" style={{ height: '35%', background: 'linear-gradient(180deg, transparent 0%, rgba(30,15,10,0.6) 30%, rgba(20,10,8,0.95) 100%)' }} />
+        <div className="absolute bottom-0 left-0 right-0" style={{ height: '15%', background: 'linear-gradient(180deg, transparent 0%, rgba(255,140,40,0.04) 100%)' }} />
+        
+        {/* Горизонтальная тёплая полоса — отблеск стола */}
+        <div className="absolute" style={{ bottom: '28%', left: '-10%', right: '-10%', height: '1px', background: 'linear-gradient(90deg, transparent 0%, rgba(255,180,80,0.15) 30%, rgba(255,200,100,0.25) 50%, rgba(255,180,80,0.15) 70%, transparent 100%)', filter: 'blur(1px)' }} />
+      </div>
       <RainEffect />
       
       <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2021/09/06/audio_34b3e8a4a5.mp3?filename=rain-and-thunder-16705.mp3" loop />
@@ -206,23 +276,29 @@ export default function App() {
       {/* ОСНОВНАЯ СЦЕНА (СТОЛ) */}
       <main className="relative z-10 flex-grow flex flex-col items-center justify-center p-4">
         
-        {/* Если мы еще не подключились или грузимся */}
-        {!tableState && (
-          <div className="flex flex-col items-center animate-pulse text-white/50">
-            <div className="w-8 h-8 border-2 border-t-rose-400 border-white/10 rounded-full animate-spin mb-4" />
-            <p className="text-xs uppercase tracking-widest">Проверяем столик...</p>
+        {/* Маленький индикатор статуса MQTT */}
+        {mqttStatus === 'connecting' && (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 flex items-center gap-2 text-white/30 text-[10px] uppercase tracking-widest">
+            <div className="w-1.5 h-1.5 bg-rose-400/50 rounded-full animate-ping" />
+            Синхронизируем...
+          </div>
+        )}
+        {mqttStatus === 'error' && (
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 flex items-center gap-2 text-yellow-400/50 text-[10px] uppercase tracking-widest">
+            <div className="w-1.5 h-1.5 bg-yellow-400/50 rounded-full" />
+            Без синхронизации
           </div>
         )}
 
         {/* СЦЕНА 1: Стол пуст */}
-        {tableState && (tableState.type === 'empty' || !tableState.type) && !isLeavingItem && (
+        {tableState.type === 'empty' && !isLeavingItem && (
           <div className="flex flex-col items-center text-center animate-blur-fade">
             <div className="w-24 h-24 sm:w-32 sm:h-32 border border-white/5 rounded-full flex items-center justify-center mb-8 bg-white/5 backdrop-blur-sm shadow-inner relative group">
               <span className="text-white/20 text-sm absolute">Пусто</span>
             </div>
             <h2 className="font-heading text-2xl sm:text-3xl font-medium text-white/90 mb-3">Ваш столик свободен</h2>
             <p className="text-white/40 text-sm mb-10 max-w-xs font-light">
-              Оставьте заботливый жест, чтобы {userRole === 'sv' ? 'Вика улыбнулась' : 'СВ улыбнулся'}, когда зайдет.
+              Оставьте заботливый жест, чтобы {userRole === 'sv' ? 'Вика улыбнулась' : 'Сурен улыбнулся'}, когда зайдет.
             </p>
             <button onClick={() => setIsLeavingItem(true)} className="premium-btn px-8 py-4 rounded-2xl text-rose-100 uppercase tracking-[0.15em] text-xs font-bold flex items-center gap-3">
               <Coffee size={16} /> Оставить сюрприз
@@ -231,14 +307,14 @@ export default function App() {
         )}
 
         {/* СЦЕНА 2: На столе что-то есть */}
-        {tableState && tableState.type !== 'empty' && !isLeavingItem && (
+        {tableState.type !== 'empty' && !isLeavingItem && (
           <div className="flex flex-col items-center animate-blur-fade relative w-full max-w-md">
             
             {/* Текст статуса */}
             <p className="text-rose-200/60 text-xs sm:text-sm uppercase tracking-widest mb-12 font-semibold">
               {tableState.from === userRole 
                 ? 'Вы оставили это. Ждем...'
-                : `${tableState.from === 'sv' ? 'СВ оставил' : 'Вика оставила'} сюрприз для вас`}
+                : `${tableState.from === 'sv' ? 'Сурен оставил' : 'Вика оставила'} сюрприз для вас`}
             </p>
 
             {/* Предмет на столе */}
@@ -284,7 +360,7 @@ export default function App() {
                 </p>
                 <div className="flex justify-between items-end border-t border-black/10 pt-4 mt-auto">
                    <span className="font-hand text-lg text-rose-500/80 -rotate-2">
-                     От: {tableState.from === 'sv' ? 'Твоего СВ' : 'Твоей принцессы'} ❤️
+                     От: {tableState.from === 'sv' ? 'Твоего Сурена' : 'Твоей принцессы'} ❤️
                    </span>
                    <button onClick={consumeItem} className="text-[10px] uppercase tracking-widest bg-[#2c2a29] text-[#fdfbf7] px-4 py-2 rounded shadow-md hover:bg-black transition-colors font-body font-bold">
                      Ответить
