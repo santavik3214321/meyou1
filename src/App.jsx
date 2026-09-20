@@ -213,6 +213,49 @@ function MiniPlayer({ isPlaying, onToggle }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// КОМПОНЕНТ: Счётчик времени вместе (по часовому поясу Кемерово, UTC+7)
+// ═══════════════════════════════════════════════════════════
+function LoveCounter() {
+  const [time, setTime] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
+
+  useEffect(() => {
+    const update = () => {
+      // 5 августа 2026, 00:00:00 по часовому поясу Кемерово (UTC+7)
+      const start = new Date('2026-08-05T00:00:00+07:00').getTime();
+      const diff = Math.max(0, Date.now() - start);
+      setTime({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        mins: Math.floor((diff / (1000 * 60)) % 60),
+        secs: Math.floor((diff / 1000) % 60),
+      });
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="glass-card rounded-full px-3.5 py-1.5 sm:px-4 sm:py-2 flex items-center gap-2 select-none shadow-lg border border-white/10">
+      <Heart size={12} className="text-rose-400 fill-rose-400 animate-pulse" />
+      <div className="flex items-baseline gap-1 text-[11px] sm:text-xs font-semibold text-rose-100">
+        <span className="font-heading italic text-rose-200 text-xs sm:text-sm">{time.days}</span>
+        <span className="text-white/45 text-[9px] uppercase tracking-wider">дн</span>
+        <span className="font-mono text-white/90">{String(time.hours).padStart(2, '0')}</span>
+        <span className="text-white/40 text-[9px]">ч</span>
+        <span className="font-mono text-white/90">{String(time.mins).padStart(2, '0')}</span>
+        <span className="text-white/40 text-[9px]">м</span>
+        <span className="font-mono text-rose-300">{String(time.secs).padStart(2, '0')}</span>
+        <span className="text-white/40 text-[9px]">с</span>
+      </div>
+      <span className="text-[8px] uppercase tracking-[1.5px] text-white/35 border-l border-white/10 pl-2">
+        Кемерово
+      </span>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // КОМПОНЕНТ: Кружка кофе (вид сверху)
 // ═══════════════════════════════════════════════════════════
 function CoffeeCup({ onClick, interactive }) {
@@ -387,9 +430,12 @@ export default function App() {
   // ═══ ЭКРАН ВХОДА ═══
   if (!isAuthenticated) {
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center p-4 relative overflow-hidden font-body">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 relative overflow-hidden font-body">
         <CafeBackground />
-        <form onSubmit={handleLogin} className="glass-card p-8 sm:p-10 rounded-3xl w-full max-w-sm z-10 animate-blur-fade flex flex-col items-center">
+        <div className="absolute top-4 sm:top-6 z-20 flex justify-center w-full px-4 pt-[calc(env(safe-area-inset-top,0.5rem)+0.25rem)]">
+          <LoveCounter />
+        </div>
+        <form onSubmit={handleLogin} className="glass-card p-8 sm:p-10 rounded-3xl w-full max-w-sm z-10 animate-blur-fade flex flex-col items-center mt-12 sm:mt-8">
           <div className="w-16 h-16 rounded-full bg-black/30 border border-white/10 flex items-center justify-center mb-6 shadow-inner">
             <Lock className="w-6 h-6 text-rose-300/70" />
           </div>
@@ -427,11 +473,14 @@ export default function App() {
       <audio ref={audioRef} src="/music/sting.mp3" loop />
 
       {/* ШАПКА */}
-      <div className="relative z-50 flex justify-between items-center p-4 sm:p-6 pt-[calc(env(safe-area-inset-top,0.5rem)+0.75rem)]">
+      <div className="relative z-50 flex flex-wrap items-center justify-between gap-3 p-3 sm:p-6 pt-[calc(env(safe-area-inset-top,0.5rem)+0.75rem)]">
         <button onClick={handleLogout}
           className="text-white/35 hover:text-white/70 transition-colors flex items-center gap-2 text-[9px] uppercase tracking-[2px] font-semibold glass-card px-3 py-2 rounded-full">
           <LogOut size={11} /> Выйти
         </button>
+        <div className="order-last sm:order-none w-full sm:w-auto flex justify-center">
+          <LoveCounter />
+        </div>
         <MiniPlayer isPlaying={isMusicPlaying} onToggle={() => setIsMusicPlaying(!isMusicPlaying)} />
       </div>
 
