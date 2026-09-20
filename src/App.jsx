@@ -56,6 +56,7 @@ function SteamEffect() {
 
 export default function App() {
   const [userRole, setUserRole] = useState(localStorage.getItem('cafeRole') || '');
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('cafeRole'));
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
@@ -72,7 +73,7 @@ export default function App() {
 
   // Подключение к Firebase только если авторизован
   useEffect(() => {
-    if (!localStorage.getItem('cafeRole')) return;
+    if (!isAuthenticated) return;
 
     const unsubscribe = onValue(tableRef, (snapshot) => {
       const data = snapshot.val();
@@ -85,7 +86,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [userRole]);
+  }, [isAuthenticated, userRole]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -96,8 +97,7 @@ export default function App() {
     if (password === SECRET_PASSWORD) {
       localStorage.setItem('cafeRole', userRole);
       setAuthError('');
-      setUserRole(userRole + ' '); // Trick to force re-render
-      setUserRole(userRole);
+      setIsAuthenticated(true);
     } else {
       setAuthError('Неверный пароль');
     }
@@ -107,6 +107,7 @@ export default function App() {
     localStorage.removeItem('cafeRole');
     setUserRole('');
     setPassword('');
+    setIsAuthenticated(false);
   };
 
   useEffect(() => {
@@ -146,7 +147,7 @@ export default function App() {
   };
 
   // ═══ ЭКРАН ВХОДА ═══
-  if (!localStorage.getItem('cafeRole')) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-[100dvh] bg-[#0b090a] flex items-center justify-center p-4 relative overflow-hidden font-body">
         <div className="absolute inset-0 bg-gradient-to-br from-[#1a1318] to-[#0a080c] z-0" />
@@ -189,25 +190,10 @@ export default function App() {
   return (
     <div className="min-h-[100dvh] flex flex-col relative font-body bg-[#0b090a] overflow-hidden">
 
-      {/* ═══ РОМАНТИЧНЫЙ ФОН КАФЕ ═══ */}
-      <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(135deg, #0a1128 0%, #1a2a4f 100%)' }} />
-
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute" style={{ bottom: '20%', left: '15%', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(255,170,50,0.15) 0%, rgba(255,140,20,0.05) 40%, transparent 70%)', borderRadius: '50%', filter: 'blur(40px)', animation: 'candle-flicker 4s ease-in-out infinite' }} />
-        <div className="absolute" style={{ top: '25%', right: '10%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(255,160,50,0.12) 0%, transparent 70%)', borderRadius: '50%', filter: 'blur(30px)', animation: 'candle-flicker 3s ease-in-out infinite 1s' }} />
-
-        <div className="absolute inset-0" style={{ background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', borderBottom: '2px solid rgba(255,255,255,0.05)' }} />
-
-        {[
-          { l: '10%', t: '20%', s: 80, o: 0.6, blur: 15, delay: 0 },
-          { l: '70%', t: '30%', s: 120, o: 0.5, blur: 20, delay: 1 },
-          { l: '85%', t: '15%', s: 60, o: 0.7, blur: 10, delay: 2 },
-          { l: '20%', t: '40%', s: 90, o: 0.4, blur: 18, delay: 1.5 },
-        ].map((b, i) => (
-          <div key={i} className="absolute rounded-full" style={{ left: b.l, top: b.t, width: `${b.s}px`, height: `${b.s}px`, background: `rgba(255, 170, 50, ${b.o})`, filter: `blur(${b.blur}px)`, animation: `bokeh-float 4s ease-in-out infinite alternate`, animationDelay: `${b.delay}s` }} />
-        ))}
-
-        <div className="absolute bottom-0 left-0 right-0" style={{ height: '35%', background: 'linear-gradient(180deg, #3d2417 0%, #1e1109 100%)', boxShadow: 'inset 0 10px 30px rgba(0,0,0,0.8)', borderTop: '1px solid rgba(255,170,50,0.2)' }} />
+      {/* ═══ ВОЛШЕБНЫЙ ФОН GHIBLI ═══ */}
+      <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url(./bg.jpg)' }}>
+        {/* Легкое затемнение для читаемости текста */}
+        <div className="absolute inset-0 bg-black/20" />
       </div>
 
       <RainEffect />
