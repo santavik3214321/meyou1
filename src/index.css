@@ -1,202 +1,186 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;0,700;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@200;300;400;500&family=Nanum+Myeongjo:wght@400;700&display=swap');
 
 @theme {
-  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-heading: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Inter', system-ui, sans-serif;
-  --font-hand: 'Caveat', cursive;
+  --font-serif: 'Nanum Myeongjo', serif;
 }
 
 html, body {
   margin: 0;
   padding: 0;
+  background-color: #050505;
+  color: #F5F5F7;
   overflow: hidden;
   height: 100%;
-  background: #050a18;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ═══════════════════════════════════════
-   ЗВЁЗДЫ
+   CINEMATIC BACKGROUND
    ═══════════════════════════════════════ */
-@keyframes twinkle {
-  0%, 100% { opacity: 0.25; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.4); }
-}
-
-/* ═══════════════════════════════════════
-   ВОЛНЫ (Goodkatz parallax)
-   ═══════════════════════════════════════ */
-.waves {
+.bg-cinematic {
   position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 25vh;
-  min-height: 80px;
-  max-height: 200px;
-  z-index: 5;
+  inset: -5%; /* Overflow to allow panning/zooming */
+  background-image: url('https://images.unsplash.com/photo-1505159940484-eb2b9f2588e2?q=80&w=2560&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center 70%;
+  filter: brightness(0.35) contrast(1.1) saturate(0.8);
+  animation: cinematic-pan 40s linear infinite alternate;
+  z-index: 0;
 }
 
-.parallax-waves > use {
-  animation: wave-drift cubic-bezier(0.55, 0.5, 0.45, 0.5) infinite;
-  will-change: transform;
-}
-.parallax-waves > use:nth-child(1) { animation-delay: -2s; animation-duration: 8s; }
-.parallax-waves > use:nth-child(2) { animation-delay: -3s; animation-duration: 12s; }
-.parallax-waves > use:nth-child(3) { animation-delay: -4s; animation-duration: 16s; }
-.parallax-waves > use:nth-child(4) { animation-delay: -5s; animation-duration: 24s; }
-
-@keyframes wave-drift {
-  0% { transform: translate3d(-90px, 0, 0); }
-  100% { transform: translate3d(85px, 0, 0); }
+@keyframes cinematic-pan {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.05) translate(-1%, 1%); }
 }
 
 /* ═══════════════════════════════════════
-   МАЯК
+   FILM GRAIN
    ═══════════════════════════════════════ */
-@keyframes beacon-glow {
-  0%, 100% { opacity: 0.4; box-shadow: 0 0 8px 3px rgba(255,200,80,0.3); }
-  50% { opacity: 1; box-shadow: 0 0 20px 8px rgba(255,200,80,0.6); }
+.bg-grain {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 10;
+  mix-blend-mode: overlay;
 }
 
 /* ═══════════════════════════════════════
-   БУТЫЛКА — 3 физики
+   QUIET LUXURY UI ELEMENTS
    ═══════════════════════════════════════ */
-@keyframes bottle-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
+.luxury-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 0%, rgba(3,3,3,0.8) 100%);
+  z-index: 1;
+  pointer-events: none;
 }
 
-@keyframes bottle-rock {
-  0%   { rotate: 0deg; }
-  25%  { rotate: 5deg; }
-  50%  { rotate: -1deg; }
-  75%  { rotate: -6deg; }
-  100% { rotate: 0deg; }
+.luxury-panel {
+  background: rgba(10, 10, 10, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
 }
 
-@keyframes bottle-drift {
-  0%, 100% { translate: 0 0; }
-  50% { translate: 8px 0; }
+.luxury-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 0.15em;
+}
+.luxury-btn:hover:not(:disabled) {
+  background: #fff;
+  color: #000;
+  transform: translateY(-2px);
+}
+.luxury-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
-/* Бутылка плывёт к другому берегу */
-@keyframes sail-right {
-  0%   { left: 12%; opacity: 0; transform: scale(0.7); }
-  10%  { opacity: 1; transform: scale(1); }
-  90%  { opacity: 1; transform: scale(1); }
-  100% { left: 82%; opacity: 0.8; transform: scale(0.9); }
+.luxury-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0;
+  color: #fff;
+  transition: border-color 0.4s ease;
 }
-
-@keyframes sail-left {
-  0%   { left: 82%; opacity: 0; transform: scale(0.7); }
-  10%  { opacity: 1; transform: scale(1); }
-  90%  { opacity: 1; transform: scale(1); }
-  100% { left: 12%; opacity: 0.8; transform: scale(0.9); }
+.luxury-input:focus {
+  outline: none;
+  border-bottom-color: rgba(255, 255, 255, 0.7);
 }
 
 /* ═══════════════════════════════════════
-   ЛУННАЯ ДОРОЖКА
+   ANIMATIONS (GSAP-style smooth CSS)
    ═══════════════════════════════════════ */
-@keyframes moon-shimmer {
-  0%, 100% { opacity: 0.15; transform: scaleX(1); }
-  50% { opacity: 0.35; transform: scaleX(1.1); }
+.reveal-up {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: reveal 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.reveal-up-delay-1 { animation-delay: 0.2s; }
+.reveal-up-delay-2 { animation-delay: 0.4s; }
+.reveal-up-delay-3 { animation-delay: 0.6s; }
+
+@keyframes reveal {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fade 2s ease-in-out forwards;
+}
+@keyframes fade {
+  to { opacity: 1; }
 }
 
 /* ═══════════════════════════════════════
-   GLASSMORPHISM
+   MESSAGE ORB (Instead of bottle)
    ═══════════════════════════════════════ */
-.glass-card {
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+.message-orb {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 20px 4px rgba(255, 255, 255, 0.4);
+  position: relative;
+  cursor: pointer;
+  transition: all 0.5s ease;
+}
+.message-orb::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  animation: orb-pulse 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.message-orb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 30px 8px rgba(255, 255, 255, 0.6);
 }
 
-/* ═══════════════════════════════════════
-   КНОПКА
-   ═══════════════════════════════════════ */
-.btn-ocean {
-  background: linear-gradient(135deg, rgba(100,181,246,0.4), rgba(30,136,229,0.3));
-  border: 1px solid rgba(100,181,246,0.3);
-  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-  box-shadow: 0 4px 20px rgba(30,136,229,0.15);
-}
-.btn-ocean:hover {
-  transform: scale(1.03) translateY(-2px);
-  box-shadow: 0 0 30px rgba(100,181,246,0.25), 0 8px 25px rgba(0,0,0,0.3);
-}
-.btn-ocean:disabled {
-  opacity: 0.35;
-  transform: none;
-  box-shadow: none;
-}
-
-/* ═══════════════════════════════════════
-   ЗАПИСКА
-   ═══════════════════════════════════════ */
-.note-paper {
-  background: #fdfbf7;
-  background-image: radial-gradient(rgba(0,0,0,0.05) 1px, transparent 1px);
-  background-size: 6px 6px;
-  box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 0 30px rgba(0,0,0,0.03);
-}
-
-@keyframes note-unfold {
-  0%   { transform: translateY(60px) rotate(-6deg) scale(0.85); opacity: 0; }
-  100% { transform: translateY(0) rotate(-1.5deg) scale(1); opacity: 1; }
-}
-.animate-unfold {
-  animation: note-unfold 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-/* ═══════════════════════════════════════
-   FADE IN
-   ═══════════════════════════════════════ */
-@keyframes fade-up {
-  0% { opacity: 0; transform: translateY(16px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-up {
-  animation: fade-up 0.6s ease-out forwards;
-}
-
-/* ═══════════════════════════════════════
-   ЭКВАЛАЙЗЕР
-   ═══════════════════════════════════════ */
-.eq-bar {
-  width: 3px;
-  background: rgba(100,181,246,0.7);
-  border-radius: 2px;
-  animation: eq-bounce ease-in-out infinite;
-  transform-origin: bottom;
-}
-@keyframes eq-bounce {
-  0%, 100% { transform: scaleY(0.3); }
-  50% { transform: scaleY(1); }
-}
-
-/* ═══════════════════════════════════════
-   НОТА
-   ═══════════════════════════════════════ */
-@keyframes note-sway {
-  0%, 100% { transform: rotate(-5deg); }
-  50% { transform: rotate(5deg) translateY(-2px); }
-}
-
-/* ═══════════════════════════════════════
-   ПУЛЬС ПОДСКАЗКА
-   ═══════════════════════════════════════ */
-@keyframes gentle-pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-/* ═══════════════════════════════════════
-   SPLASH (брызги при броске)
-   ═══════════════════════════════════════ */
-@keyframes splash {
-  0%   { transform: scale(0); opacity: 1; }
+@keyframes orb-pulse {
+  0% { transform: scale(0.8); opacity: 1; }
   100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════
+   SAILING / CROSSING ANIMATION
+   ═══════════════════════════════════════ */
+.crossing-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+  width: 0%;
+  animation: draw-line 4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+@keyframes draw-line {
+  0% { width: 0%; opacity: 0; }
+  50% { opacity: 1; }
+  100% { width: 100%; opacity: 0; }
+}
+
+/* ═══════════════════════════════════════
+   LUXURY LETTER MODAL
+   ═══════════════════════════════════════ */
+.letter-modal {
+  background: #FDFBF7;
+  color: #1A1A1A;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+  transform-origin: center;
+  animation: letter-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes letter-reveal {
+  0% { opacity: 0; transform: scale(0.95) translateY(20px); filter: blur(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
 }
