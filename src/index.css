@@ -1,80 +1,61 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@200;300;400;500&family=Nanum+Myeongjo:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@200;300;400;500&display=swap');
 
 @theme {
   --font-heading: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Inter', system-ui, sans-serif;
-  --font-serif: 'Nanum Myeongjo', serif;
 }
 
 html, body {
   margin: 0;
   padding: 0;
-  background-color: #050505;
-  color: #F5F5F7;
+  background-color: #03060a;
+  color: #ffffff;
   overflow: hidden;
   height: 100%;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ═══════════════════════════════════════
-   CINEMATIC BACKGROUND
+   UI OVERLAYS
    ═══════════════════════════════════════ */
-.bg-cinematic {
-  position: absolute;
-  inset: -5%; /* Overflow to allow panning/zooming */
-  background-image: url('https://images.unsplash.com/photo-1505159940484-eb2b9f2588e2?q=80&w=2560&auto=format&fit=crop');
-  background-size: cover;
-  background-position: center 70%;
-  filter: brightness(0.35) contrast(1.1) saturate(0.8);
-  animation: cinematic-pan 40s linear infinite alternate;
-  z-index: 0;
-}
-
-@keyframes cinematic-pan {
-  0% { transform: scale(1) translate(0, 0); }
-  100% { transform: scale(1.05) translate(-1%, 1%); }
-}
-
-/* ═══════════════════════════════════════
-   FILM GRAIN
-   ═══════════════════════════════════════ */
-.bg-grain {
+.hud-layer {
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.05;
   pointer-events: none;
   z-index: 10;
-  mix-blend-mode: overlay;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ═══════════════════════════════════════
-   QUIET LUXURY UI ELEMENTS
-   ═══════════════════════════════════════ */
-.luxury-overlay {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at center, transparent 0%, rgba(3,3,3,0.8) 100%);
-  z-index: 1;
-  pointer-events: none;
+.hud-interactive {
+  pointer-events: auto;
 }
 
 .luxury-panel {
-  background: rgba(10, 10, 10, 0.4);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+  background: rgba(5, 10, 15, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.luxury-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0;
+  color: #fff;
+  transition: border-color 0.4s ease;
+}
+.luxury-input:focus {
+  outline: none;
+  border-bottom-color: rgba(255, 255, 255, 0.8);
 }
 
 .luxury-btn {
-  background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
-  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  letter-spacing: 0.15em;
+  transition: all 0.5s ease;
 }
 .luxury-btn:hover:not(:disabled) {
   background: #fff;
@@ -86,101 +67,35 @@ html, body {
   cursor: not-allowed;
 }
 
-.luxury-input {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 0;
-  color: #fff;
-  transition: border-color 0.4s ease;
-}
-.luxury-input:focus {
-  outline: none;
-  border-bottom-color: rgba(255, 255, 255, 0.7);
-}
-
-/* ═══════════════════════════════════════
-   ANIMATIONS (GSAP-style smooth CSS)
-   ═══════════════════════════════════════ */
-.reveal-up {
-  opacity: 0;
-  transform: translateY(30px);
-  animation: reveal 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-.reveal-up-delay-1 { animation-delay: 0.2s; }
-.reveal-up-delay-2 { animation-delay: 0.4s; }
-.reveal-up-delay-3 { animation-delay: 0.6s; }
-
-@keyframes reveal {
-  to { opacity: 1; transform: translateY(0); }
-}
-
+/* ANIMATIONS */
 .fade-in {
-  opacity: 0;
-  animation: fade 2s ease-in-out forwards;
+  animation: fadeIn 1s ease-out forwards;
 }
-@keyframes fade {
+@keyframes fadeIn {
+  from { opacity: 0; }
   to { opacity: 1; }
 }
 
-/* ═══════════════════════════════════════
-   MESSAGE ORB (Instead of bottle)
-   ═══════════════════════════════════════ */
-.message-orb {
-  width: 12px;
-  height: 12px;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 20px 4px rgba(255, 255, 255, 0.4);
-  position: relative;
-  cursor: pointer;
-  transition: all 0.5s ease;
+.reveal-up {
+  opacity: 0;
+  animation: revealUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-.message-orb::after {
-  content: '';
-  position: absolute;
-  inset: -8px;
-  border: 1px solid rgba(255,255,255,0.3);
-  border-radius: 50%;
-  animation: orb-pulse 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-.message-orb:hover {
-  transform: scale(1.2);
-  box-shadow: 0 0 30px 8px rgba(255, 255, 255, 0.6);
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes orb-pulse {
-  0% { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(2.5); opacity: 0; }
-}
+.delay-1 { animation-delay: 0.2s; }
+.delay-2 { animation-delay: 0.4s; }
 
-/* ═══════════════════════════════════════
-   SAILING / CROSSING ANIMATION
-   ═══════════════════════════════════════ */
-.crossing-line {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
-  width: 0%;
-  animation: draw-line 4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
-}
-@keyframes draw-line {
-  0% { width: 0%; opacity: 0; }
-  50% { opacity: 1; }
-  100% { width: 100%; opacity: 0; }
-}
-
-/* ═══════════════════════════════════════
-   LUXURY LETTER MODAL
-   ═══════════════════════════════════════ */
+/* READING MODAL */
 .letter-modal {
-  background: #FDFBF7;
-  color: #1A1A1A;
-  box-shadow: 0 40px 100px rgba(0,0,0,0.8);
-  transform-origin: center;
-  animation: letter-reveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  background: #fdfaf6;
+  color: #111;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+  animation: letterReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-
-@keyframes letter-reveal {
-  0% { opacity: 0; transform: scale(0.95) translateY(20px); filter: blur(10px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+@keyframes letterReveal {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
