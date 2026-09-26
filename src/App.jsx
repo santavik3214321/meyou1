@@ -41,7 +41,7 @@ function MagicOrbs() {
 
 function CafeBackground() {
   return (
-    <div className="absolute inset-0 z-0 overflow-hidden dreamy-bg">
+    <div className="fixed inset-0 z-0 overflow-hidden dreamy-bg">
       <Sakura />
       <MagicOrbs />
       {/* Мягкое свечение снизу */}
@@ -136,6 +136,7 @@ function Polaroid({ id, data, isNew, onDelete }) {
       drag
       dragMomentum={false}
       onDragEnd={handleDragEnd}
+      onPointerDownCapture={(e) => e.stopPropagation()}
       initial={isNew ? { y: '40vh', scale: 0.3, opacity: 0, rotate: 0 } : { x: data.x, y: data.y, rotate: data.rotation, scale: 1, opacity: 1 }}
       animate={{ x: data.x, y: data.y, rotate: data.rotation, scale: 1, opacity: 1 }}
       transition={isNew ? { type: "spring", bounce: 0.3, duration: 1.5, delay: 0.5 } : { type: "spring", bounce: 0, duration: 0.5 }}
@@ -408,7 +409,7 @@ export default function App() {
                wheel={{ step: 0.05 }}
                doubleClick={{ disabled: true }}
             >
-               <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+               <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '4000px', height: '4000px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                  {Object.entries(polaroids).map(([id, data]) => (
                     <Polaroid key={id} id={id} data={data} isNew={id === newCardId} onDelete={deletePolaroid} />
                  ))}
