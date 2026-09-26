@@ -112,12 +112,20 @@ function LoveCounter() {
 // ═══════════════════════════════════════════════════════════
 // POLAROID COMPONENTS
 // ═══════════════════════════════════════════════════════════
-function Polaroid({ id, data, isNew, onDelete, onSelect }) {
+function Polaroid({ id, data, isNew, onDelete, onSelect, boardRef }) {
   const [textVisible, setTextVisible] = useState(!isNew);
   const color = data.from === 'sv' ? 'text-[#3b3531]' : 'text-[#d94a4a]';
 
   const [currentScale, setCurrentScale] = useState(data.scale || 1);
   const initialDist = useRef(null);
+  
+  const [windowSize, setWindowSize] = useState({ w: window.innerWidth, h: window.innerHeight });
+
+  useEffect(() => {
+     const handleResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+     window.addEventListener('resize', handleResize);
+     return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     setCurrentScale(data.scale || 1);
@@ -130,10 +138,22 @@ function Polaroid({ id, data, isNew, onDelete, onSelect }) {
     }
   }, [isNew]);
 
+  const cardWidth = windowSize.w > 600 ? 180 : 150;
+  const cardHeight = windowSize.w > 600 ? 210 : 180;
+  
+  // Calculate bounds to keep card on screen (0,0 is center of screen)
+  const minX = -windowSize.w / 2 + cardWidth / 2;
+  const maxX = windowSize.w / 2 - cardWidth / 2;
+  const minY = -windowSize.h / 2 + cardHeight / 2;
+  const maxY = windowSize.h / 2 - cardHeight / 2 - 80; // 80px buffer for bottom UI
+
+  const clampedX = Math.max(minX, Math.min(data.x, maxX));
+  const clampedY = Math.max(minY, Math.min(data.y, maxY));
+
   const handleDragEnd = (e, info) => {
     update(ref(db, `cafe-polaroids-2026/${id}`), {
-      x: data.x + info.offset.x,
-      y: data.y + info.offset.y
+      x: clampedX + info.offset.x,
+      y: clampedY + info.offset.y
     });
   };
 
@@ -168,14 +188,16 @@ function Polaroid({ id, data, isNew, onDelete, onSelect }) {
     <motion.div
       layoutId={`polaroid-${id}`}
       drag
+      dragConstraints={boardRef}
+      dragElastic={0.1}
       dragMomentum={false}
       onDragEnd={handleDragEnd}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onClick={() => onSelect(id)}
-      initial={isNew ? { y: '20vh', scale: 0.3, opacity: 0, rotate: 0 } : { x: data.x, y: data.y, rotate: data.rotation, scale: currentScale, opacity: 1 }}
-      animate={{ x: data.x, y: data.y, rotate: data.rotation, scale: currentScale, opacity: 1 }}
+      initial={isNew ? { y: '20vh', scale: 0.3, opacity: 0, rotate: 0 } : { x: clampedX, y: clampedY, rotate: data.rotation, scale: currentScale, opacity: 1 }}
+      animate={{ x: clampedX, y: clampedY, rotate: data.rotation, scale: currentScale, opacity: 1 }}
       transition={isNew ? { type: "spring", bounce: 0.3, duration: 1.5, delay: 0.5 } : { type: "spring", bounce: 0, duration: 0.5 }}
       whileDrag={{ scale: currentScale * 1.05, rotate: 0, zIndex: 100, boxShadow: "0px 25px 50px rgba(0,0,0,0.3)" }}
       className="absolute bg-[#fffdf8] p-3 sm:p-4 pb-8 sm:pb-12 shadow-[0_10px_30px_rgba(255,154,158,0.3)] rounded-sm w-[150px] sm:w-[180px] cursor-grab active:cursor-grabbing border border-rose-900/5"
@@ -234,6 +256,7 @@ export default function App() {
   const [polaroids, setPolaroids] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [selectedNoteId, setSelectedNoteId] = useState(null);
+  const boardRef = useRef(null);
   
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
@@ -256,16 +279,6 @@ export default function App() {
     });
     return () => unsubscribe();
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-       // Center the scroll view on the massive 3000x3000 board
-       const boardSize = 3000;
-       const centerX = boardSize / 2 - window.innerWidth / 2;
-       const centerY = boardSize / 2 - window.innerHeight / 2;
-       window.scrollTo({ left: centerX, top: centerY, behavior: 'auto' });
-    }
-  }, [isAuthenticated, isLoading]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -441,18 +454,18 @@ export default function App() {
         
       </div>
 
-      {/* БЕСКОНЕЧНАЯ ДОСКА ПОЛАРОИДОВ (NATIVE SCROLLING) */}
+      {/* БЕСКОНЕЧНАЯ ДОСКА ПОЛАРОИДОВ (ADAPTIVE SCREEN) */}
       {isLoading ? (
         <div className="fixed inset-0 flex flex-col items-center justify-center text-rose-900/60 z-10 pointer-events-none">
           <div className="w-8 h-8 border-2 border-t-rose-400 border-rose-900/20 rounded-full animate-spin mb-4" />
           <p className="text-[9px] uppercase tracking-[3px] font-bold">Проявляем снимки...</p>
         </div>
       ) : (
-        <main className="relative z-10 w-[3000px] h-[3000px]">
+        <main ref={boardRef} className="absolute inset-0 z-10 overflow-hidden touch-none">
           {/* Центр доски (виртуальный ноль) */}
           <div className="absolute top-1/2 left-1/2 w-0 h-0">
              {Object.entries(polaroids).map(([id, data]) => (
-                <Polaroid key={id} id={id} data={data} isNew={id === newCardId} onDelete={deletePolaroid} onSelect={setSelectedNoteId} />
+                <Polaroid key={id} id={id} data={data} isNew={id === newCardId} onDelete={deletePolaroid} onSelect={setSelectedNoteId} boardRef={boardRef} />
              ))}
           </div>
         </main>
