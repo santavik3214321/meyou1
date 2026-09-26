@@ -112,9 +112,16 @@ function LoveCounter() {
 // ═══════════════════════════════════════════════════════════
 // POLAROID COMPONENTS
 // ═══════════════════════════════════════════════════════════
-function Polaroid({ id, data, isNew, onDelete }) {
+function Polaroid({ id, data, isNew, onDelete, onSelect }) {
   const [textVisible, setTextVisible] = useState(!isNew);
   const color = data.from === 'sv' ? 'text-[#3b3531]' : 'text-[#d94a4a]';
+
+  const [currentScale, setCurrentScale] = useState(data.scale || 1);
+  const initialDist = useRef(null);
+
+  useEffect(() => {
+    setCurrentScale(data.scale || 1);
+  }, [data.scale]);
 
   useEffect(() => {
     if (isNew) {
@@ -130,15 +137,47 @@ function Polaroid({ id, data, isNew, onDelete }) {
     });
   };
 
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      initialDist.current = Math.hypot(dx, dy);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && initialDist.current) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const ratio = dist / initialDist.current;
+      let newScale = (data.scale || 1) * ratio;
+      newScale = Math.min(Math.max(newScale, 0.6), 1); 
+      setCurrentScale(newScale);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (initialDist.current && e.touches.length < 2) {
+      initialDist.current = null;
+      update(ref(db, `cafe-polaroids-2026/${id}`), { scale: currentScale });
+    }
+  };
+
   return (
     <motion.div
+      layoutId={`polaroid-${id}`}
       drag
       dragMomentum={false}
       onDragEnd={handleDragEnd}
-      initial={isNew ? { y: '20vh', scale: 0.3, opacity: 0, rotate: 0 } : { x: data.x, y: data.y, rotate: data.rotation, scale: 1, opacity: 1 }}
-      animate={{ x: data.x, y: data.y, rotate: data.rotation, scale: 1, opacity: 1 }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onClick={() => onSelect(id)}
+      initial={isNew ? { y: '20vh', scale: 0.3, opacity: 0, rotate: 0 } : { x: data.x, y: data.y, rotate: data.rotation, scale: currentScale, opacity: 1 }}
+      animate={{ x: data.x, y: data.y, rotate: data.rotation, scale: currentScale, opacity: 1 }}
       transition={isNew ? { type: "spring", bounce: 0.3, duration: 1.5, delay: 0.5 } : { type: "spring", bounce: 0, duration: 0.5 }}
-      whileDrag={{ scale: 1.1, rotate: 0, zIndex: 100, boxShadow: "0px 25px 50px rgba(0,0,0,0.3)" }}
+      whileDrag={{ scale: currentScale * 1.05, rotate: 0, zIndex: 100, boxShadow: "0px 25px 50px rgba(0,0,0,0.3)" }}
       className="absolute bg-[#fffdf8] p-3 sm:p-4 pb-8 sm:pb-12 shadow-[0_10px_30px_rgba(255,154,158,0.3)] rounded-sm w-[150px] sm:w-[180px] cursor-grab active:cursor-grabbing border border-rose-900/5"
       style={{ 
         marginLeft: '-75px', // Center alignment fix for w-[150px]
@@ -147,7 +186,7 @@ function Polaroid({ id, data, isNew, onDelete }) {
         backgroundImage: "url('https://www.transparenttextures.com/patterns/cream-paper.png')" 
       }}
     >
-      <button onClick={() => onDelete(id)} className="absolute top-2 right-2 text-rose-900/10 hover:text-rose-500 z-10 transition-colors">
+      <button onClick={(e) => { e.stopPropagation(); onDelete(id); }} className="absolute top-2 right-2 text-rose-900/10 hover:text-rose-500 z-10 transition-colors">
          <X size={14} />
       </button>
       
@@ -194,6 +233,7 @@ export default function App() {
 
   const [polaroids, setPolaroids] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedNoteId, setSelectedNoteId] = useState(null);
   
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
@@ -412,7 +452,7 @@ export default function App() {
           {/* Центр доски (виртуальный ноль) */}
           <div className="absolute top-1/2 left-1/2 w-0 h-0">
              {Object.entries(polaroids).map(([id, data]) => (
-                <Polaroid key={id} id={id} data={data} isNew={id === newCardId} onDelete={deletePolaroid} />
+                <Polaroid key={id} id={id} data={data} isNew={id === newCardId} onDelete={deletePolaroid} onSelect={setSelectedNoteId} />
              ))}
           </div>
         </main>
@@ -473,6 +513,52 @@ export default function App() {
          </motion.button>
       </div>
 
+      {/* ОВЕРЛЕЙ ДЛЯ РАСШИРЕННОГО ПРОСМОТРА ПОЛАРОИДА */}
+      <AnimatePresence>
+        {selectedNoteId && polaroids[selectedNoteId] && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            onClick={() => setSelectedNoteId(null)}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-8 cursor-pointer"
+          >
+            <motion.div
+              layoutId={`polaroid-${selectedNoteId}`}
+              className="bg-[#fffdf8] p-4 sm:p-6 pb-12 sm:pb-16 shadow-2xl rounded-md w-full max-w-sm sm:max-w-md cursor-auto border border-rose-900/5 relative"
+              style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/cream-paper.png')" }}
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on the card itself
+            >
+              {/* Закрыть крестик */}
+              <button onClick={() => setSelectedNoteId(null)} className="absolute top-4 right-4 text-rose-900/30 hover:text-rose-900 transition-colors">
+                <X size={20} />
+              </button>
+
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-rose-200 shadow-[inset_0_-2px_4px_rgba(0,0,0,0.1),0_2px_4px_rgba(255,154,158,0.4)] border border-rose-300" />
+              
+              <div className="w-full aspect-square bg-gradient-to-br from-rose-200 to-amber-100 rounded-sm mb-6 relative overflow-hidden shadow-[inset_0_0_15px_rgba(255,154,158,0.4)] flex items-center justify-center">
+                {polaroids[selectedNoteId].image ? (
+                  <img src={polaroids[selectedNoteId].image} alt="polaroid" className="w-full h-full object-contain bg-black/5" draggable={false} />
+                ) : (
+                  <Heart className="w-12 h-12 text-rose-400/30" fill="currentColor" />
+                )}
+              </div>
+
+              {polaroids[selectedNoteId].note && (
+                <div className="w-full overflow-hidden px-2">
+                  <p className={`font-hand text-2xl sm:text-3xl text-center leading-tight break-words break-all ${polaroids[selectedNoteId].from === 'sv' ? 'text-[#3b3531]' : 'text-[#d94a4a]'}`}>
+                    {polaroids[selectedNoteId].note}
+                  </p>
+                </div>
+              )}
+              
+              <div className="absolute bottom-4 right-5 text-xs font-mono text-rose-900/30 font-bold uppercase">
+                {polaroids[selectedNoteId].from}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
