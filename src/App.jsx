@@ -293,6 +293,10 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
+  const deletePolaroid = (id) => {
+    remove(ref(db, `cafe-polaroids-2026/${id}`));
+  };
+
   const sendPolaroid = () => {
     if (!noteText.trim() && !noteImage) return;
     
