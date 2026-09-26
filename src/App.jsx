@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Lock, Heart, LogOut, Music, Pause, Play, Camera, X } from 'lucide-react';
+import { Lock, Heart, LogOut, Music, Pause, Play, Camera, X, ImagePlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue, push, update, remove } from "firebase/database";
 
@@ -149,9 +150,13 @@ function Polaroid({ id, data, isNew, onDelete }) {
       {/* Розовый Магнитик сверху */}
       <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-rose-200 shadow-[inset_0_-2px_4px_rgba(0,0,0,0.1),0_2px_4px_rgba(255,154,158,0.4)] border border-rose-300" />
       
-      {/* "Снимок" (размытый фон неба) */}
-      <div className="w-full h-24 sm:h-32 bg-gradient-to-br from-rose-200 to-amber-100 rounded-sm mb-3 sm:mb-4 relative overflow-hidden shadow-[inset_0_0_15px_rgba(255,154,158,0.4)] flex items-center justify-center">
-        <Heart className="w-6 h-6 text-rose-400/30" fill="currentColor" />
+      {/* "Снимок" (фото или размытый фон) */}
+      <div className="w-full aspect-square bg-gradient-to-br from-rose-200 to-amber-100 rounded-sm mb-3 sm:mb-4 relative overflow-hidden shadow-[inset_0_0_15px_rgba(255,154,158,0.4)] flex items-center justify-center">
+        {data.image ? (
+          <img src={data.image} alt="polaroid" className="w-full h-full object-cover" draggable={false} />
+        ) : (
+          <Heart className="w-6 h-6 text-rose-400/30" fill="currentColor" />
+        )}
         
         {/* Анимация проявления (только для новых) */}
         {isNew && !textVisible && (
@@ -159,11 +164,13 @@ function Polaroid({ id, data, isNew, onDelete }) {
         )}
       </div>
 
-      <div className="w-full overflow-hidden">
-        <p className={`font-hand text-lg sm:text-xl ${color} text-center leading-tight transition-opacity duration-1000 break-words break-all ${textVisible ? 'opacity-100' : 'opacity-0'}`}>
-          {data.note}
-        </p>
-      </div>
+      {data.note && (
+        <div className="w-full overflow-hidden">
+          <p className={`font-hand text-lg sm:text-xl ${color} text-center leading-tight transition-opacity duration-1000 break-words break-all ${textVisible ? 'opacity-100' : 'opacity-0'}`}>
+            {data.note}
+          </p>
+        </div>
+      )}
       
       <div className="absolute bottom-2 right-3 text-[9px] sm:text-[10px] font-mono text-rose-900/30 font-bold uppercase">
         {data.from}
@@ -186,7 +193,9 @@ export default function App() {
   
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [noteImage, setNoteImage] = useState(null);
   const [newCardId, setNewCardId] = useState(null);
+  const fileInputRef = useRef(null);
 
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const audioRef = useRef(null);
@@ -230,8 +239,48 @@ export default function App() {
     }
   }, [isMusicPlaying]);
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 400;
+        const MAX_HEIGHT = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Compress to JPEG to save space in Realtime DB
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+        setNoteImage(dataUrl);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const sendPolaroid = () => {
-    if (!noteText.trim()) return;
+    if (!noteText.trim() && !noteImage) return;
     
     // Play shutter sound
     if (shutterRef.current) {
@@ -253,12 +302,14 @@ export default function App() {
 
     set(newRef, {
       note: noteText,
+      image: noteImage || null,
       from: localStorage.getItem('cafeRole'),
       timestamp: Date.now(),
       x, y, rotation
     });
     
     setNoteText('');
+    setNoteImage(null);
     setIsCameraOpen(false);
     
     // Reset the "new" status after animation completes
@@ -338,18 +389,31 @@ export default function App() {
         
       </div>
 
-      {/* БЕСКОНЕЧНАЯ ДОСКА ПОЛАРОИДОВ */}
-      <main className="relative z-10 flex-grow flex items-center justify-center pointer-events-none">
+      {/* БЕСКОНЕЧНАЯ ДОСКА ПОЛАРОИДОВ С ЗУМОМ */}
+      <main className="relative z-10 flex-grow pointer-events-none w-full overflow-hidden">
         {isLoading ? (
-          <div className="flex flex-col items-center text-rose-900/60">
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-rose-900/60">
             <div className="w-8 h-8 border-2 border-t-rose-400 border-rose-900/20 rounded-full animate-spin mb-4" />
             <p className="text-[9px] uppercase tracking-[3px] font-bold">Проявляем снимки...</p>
           </div>
         ) : (
-          <div className="absolute inset-0 pointer-events-auto flex items-center justify-center">
-             {Object.entries(polaroids).map(([id, data]) => (
-                <Polaroid key={id} id={id} data={data} isNew={id === newCardId} onDelete={deletePolaroid} />
-             ))}
+          <div className="absolute inset-0 pointer-events-auto touch-none">
+            <TransformWrapper
+               initialScale={1}
+               minScale={0.3}
+               maxScale={1}
+               centerOnInit={true}
+               limitToBounds={false}
+               panning={{ excluded: ['polaroid-card'] }}
+               wheel={{ step: 0.05 }}
+               doubleClick={{ disabled: true }}
+            >
+               <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 {Object.entries(polaroids).map(([id, data]) => (
+                    <Polaroid key={id} id={id} data={data} isNew={id === newCardId} onDelete={deletePolaroid} />
+                 ))}
+               </TransformComponent>
+            </TransformWrapper>
           </div>
         )}
       </main>
@@ -367,10 +431,28 @@ export default function App() {
              >
                <button onClick={() => setIsCameraOpen(false)} className="absolute top-4 right-4 text-rose-900/30 hover:text-rose-900/80 transition-colors"><X size={16}/></button>
                <h3 className="font-heading text-lg sm:text-xl text-rose-900 mb-3 sm:mb-4 text-center italic font-bold">Новый снимок</h3>
+               
+               {/* Добавление фото */}
+               {noteImage ? (
+                 <div className="relative w-full h-32 sm:h-40 mb-3 rounded-xl overflow-hidden border border-white/40 shadow-inner">
+                   <img src={noteImage} alt="preview" className="w-full h-full object-cover" />
+                   <button onClick={() => setNoteImage(null)} className="absolute top-2 right-2 bg-black/40 p-1.5 rounded-full text-white/80 hover:text-white transition-colors backdrop-blur-sm"><X size={14}/></button>
+                 </div>
+               ) : (
+                 <div 
+                   onClick={() => fileInputRef.current?.click()}
+                   className="w-full h-16 sm:h-20 mb-3 rounded-xl border border-dashed border-rose-900/30 bg-white/10 flex flex-col items-center justify-center cursor-pointer hover:bg-white/20 transition-colors text-rose-900/60"
+                 >
+                   <ImagePlus size={20} className="mb-1 opacity-70" />
+                   <span className="text-[9px] uppercase tracking-[1px] font-bold">Добавить фото</span>
+                 </div>
+               )}
+               <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleImageUpload} />
+
                <textarea value={noteText} onChange={(e) => setNoteText(e.target.value)}
-                  placeholder="Напишите записку на полароиде..."
-                  className="w-full h-20 sm:h-24 px-4 py-3 rounded-xl border border-white/30 bg-white/20 text-rose-950 focus:outline-none focus:border-white transition-all font-hand text-xl sm:text-2xl resize-none placeholder:font-body placeholder:text-xs placeholder:text-rose-900/40 mb-3 sm:mb-4" />
-               <button onClick={sendPolaroid} disabled={!noteText.trim()}
+                  placeholder="Напишите записку..."
+                  className="w-full h-16 sm:h-20 px-4 py-3 rounded-xl border border-white/30 bg-white/20 text-rose-950 focus:outline-none focus:border-white transition-all font-hand text-xl sm:text-2xl resize-none placeholder:font-body placeholder:text-xs placeholder:text-rose-900/40 mb-3 sm:mb-4" />
+               <button onClick={sendPolaroid} disabled={!noteText.trim() && !noteImage}
                   className="btn-glow w-full py-3 sm:py-4 rounded-xl uppercase tracking-[2px] text-[10px] font-bold flex items-center justify-center gap-2">
                   <Camera size={14} /> Сделать снимок
                </button>
