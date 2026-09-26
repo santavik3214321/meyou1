@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Lock, Heart, LogOut, Music, Pause, Play, Camera, X, ImagePlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue, push, update, remove } from "firebase/database";
 
@@ -41,7 +40,7 @@ function MagicOrbs() {
 
 function CafeBackground() {
   return (
-    <div className="fixed inset-0 z-0 overflow-hidden dreamy-bg">
+    <div className="fixed inset-0 z-0 overflow-hidden dreamy-bg pointer-events-none">
       <Sakura />
       <MagicOrbs />
       {/* Мягкое свечение снизу */}
@@ -136,13 +135,17 @@ function Polaroid({ id, data, isNew, onDelete }) {
       drag
       dragMomentum={false}
       onDragEnd={handleDragEnd}
-      onPointerDownCapture={(e) => e.stopPropagation()}
-      initial={isNew ? { y: '40vh', scale: 0.3, opacity: 0, rotate: 0 } : { x: data.x, y: data.y, rotate: data.rotation, scale: 1, opacity: 1 }}
+      initial={isNew ? { y: '20vh', scale: 0.3, opacity: 0, rotate: 0 } : { x: data.x, y: data.y, rotate: data.rotation, scale: 1, opacity: 1 }}
       animate={{ x: data.x, y: data.y, rotate: data.rotation, scale: 1, opacity: 1 }}
       transition={isNew ? { type: "spring", bounce: 0.3, duration: 1.5, delay: 0.5 } : { type: "spring", bounce: 0, duration: 0.5 }}
       whileDrag={{ scale: 1.1, rotate: 0, zIndex: 100, boxShadow: "0px 25px 50px rgba(0,0,0,0.3)" }}
       className="absolute bg-[#fffdf8] p-3 sm:p-4 pb-8 sm:pb-12 shadow-[0_10px_30px_rgba(255,154,158,0.3)] rounded-sm w-[150px] sm:w-[180px] cursor-grab active:cursor-grabbing border border-rose-900/5"
-      style={{ touchAction: "none", backgroundImage: "url('https://www.transparenttextures.com/patterns/cream-paper.png')" }}
+      style={{ 
+        marginLeft: '-75px', // Center alignment fix for w-[150px]
+        marginTop: '-75px', 
+        touchAction: "none", 
+        backgroundImage: "url('https://www.transparenttextures.com/patterns/cream-paper.png')" 
+      }}
     >
       <button onClick={() => onDelete(id)} className="absolute top-2 right-2 text-rose-900/10 hover:text-rose-500 z-10 transition-colors">
          <X size={14} />
@@ -152,9 +155,9 @@ function Polaroid({ id, data, isNew, onDelete }) {
       <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-rose-200 shadow-[inset_0_-2px_4px_rgba(0,0,0,0.1),0_2px_4px_rgba(255,154,158,0.4)] border border-rose-300" />
       
       {/* "Снимок" (фото или размытый фон) */}
-      <div className="w-full aspect-square bg-gradient-to-br from-rose-200 to-amber-100 rounded-sm mb-3 sm:mb-4 relative overflow-hidden shadow-[inset_0_0_15px_rgba(255,154,158,0.4)] flex items-center justify-center">
+      <div className="w-full aspect-square bg-gradient-to-br from-rose-200 to-amber-100 rounded-sm mb-3 sm:mb-4 relative overflow-hidden shadow-[inset_0_0_15px_rgba(255,154,158,0.4)] flex items-center justify-center pointer-events-none">
         {data.image ? (
-          <img src={data.image} alt="polaroid" className="w-full h-full object-cover" draggable={false} />
+          <img src={data.image} alt="polaroid" className="w-full h-full object-cover pointer-events-none" draggable={false} />
         ) : (
           <Heart className="w-6 h-6 text-rose-400/30" fill="currentColor" />
         )}
@@ -166,14 +169,14 @@ function Polaroid({ id, data, isNew, onDelete }) {
       </div>
 
       {data.note && (
-        <div className="w-full overflow-hidden">
+        <div className="w-full overflow-hidden pointer-events-none">
           <p className={`font-hand text-lg sm:text-xl ${color} text-center leading-tight transition-opacity duration-1000 break-words break-all ${textVisible ? 'opacity-100' : 'opacity-0'}`}>
             {data.note}
           </p>
         </div>
       )}
       
-      <div className="absolute bottom-2 right-3 text-[9px] sm:text-[10px] font-mono text-rose-900/30 font-bold uppercase">
+      <div className="absolute bottom-2 right-3 text-[9px] sm:text-[10px] font-mono text-rose-900/30 font-bold uppercase pointer-events-none">
         {data.from}
       </div>
     </motion.div>
@@ -213,6 +216,16 @@ export default function App() {
     });
     return () => unsubscribe();
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+       // Center the scroll view on the massive 3000x3000 board
+       const boardSize = 3000;
+       const centerX = boardSize / 2 - window.innerWidth / 2;
+       const centerY = boardSize / 2 - window.innerHeight / 2;
+       window.scrollTo({ left: centerX, top: centerY, behavior: 'auto' });
+    }
+  }, [isAuthenticated, isLoading]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -292,11 +305,9 @@ export default function App() {
     const newRef = push(polaroidsRef);
     const id = newRef.key;
     
-    // Calculate random position on screen (avoiding edges)
-    const marginX = window.innerWidth > 600 ? 100 : 20;
-    const marginY = 150;
-    const x = (Math.random() - 0.5) * (window.innerWidth - marginX * 2);
-    const y = (Math.random() - 0.5) * (window.innerHeight - marginY * 2) - 50;
+    // Position relatively close to center
+    const x = (Math.random() - 0.5) * 300;
+    const y = (Math.random() - 0.5) * 300 - 50;
     const rotation = (Math.random() - 0.5) * 30; // Random tilt -15 to +15 deg
 
     setNewCardId(id);
@@ -317,10 +328,6 @@ export default function App() {
     setTimeout(() => {
         setNewCardId(null);
     }, 4000);
-  };
-
-  const deletePolaroid = (id) => {
-    remove(ref(db, `cafe-polaroids-2026/${id}`));
   };
 
   // ═══ ЭКРАН ВХОДА ═══
@@ -361,15 +368,15 @@ export default function App() {
 
   // ═══ ЭКРАН КАФЕ (Доска Полароидов) ═══
   return (
-    <div className="min-h-[100dvh] flex flex-col relative font-body overflow-hidden">
+    <div className="relative font-body">
       <CafeBackground />
       
       {/* Звуки */}
       <audio ref={audioRef} src="/music/sting.mp3" loop />
       <audio ref={shutterRef} src="https://cdn.freesound.org/previews/389/389728_5724505-lq.mp3" preload="auto" />
 
-      {/* ШАПКА - Адаптивная */}
-      <div className="relative z-50 flex items-start sm:items-center justify-between p-3 sm:p-6 pt-[calc(env(safe-area-inset-top,0.5rem)+0.5rem)] pointer-events-none">
+      {/* ШАПКА - Фиксированная */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-start sm:items-center justify-between p-3 sm:p-6 pt-[calc(env(safe-area-inset-top,0.5rem)+0.5rem)] pointer-events-none">
         
         {/* Кнопка выхода */}
         <div className="pointer-events-auto">
@@ -390,37 +397,25 @@ export default function App() {
         
       </div>
 
-      {/* БЕСКОНЕЧНАЯ ДОСКА ПОЛАРОИДОВ С ЗУМОМ */}
-      <main className="relative z-10 flex-grow pointer-events-none w-full overflow-hidden">
-        {isLoading ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-rose-900/60">
-            <div className="w-8 h-8 border-2 border-t-rose-400 border-rose-900/20 rounded-full animate-spin mb-4" />
-            <p className="text-[9px] uppercase tracking-[3px] font-bold">Проявляем снимки...</p>
+      {/* БЕСКОНЕЧНАЯ ДОСКА ПОЛАРОИДОВ (NATIVE SCROLLING) */}
+      {isLoading ? (
+        <div className="fixed inset-0 flex flex-col items-center justify-center text-rose-900/60 z-10 pointer-events-none">
+          <div className="w-8 h-8 border-2 border-t-rose-400 border-rose-900/20 rounded-full animate-spin mb-4" />
+          <p className="text-[9px] uppercase tracking-[3px] font-bold">Проявляем снимки...</p>
+        </div>
+      ) : (
+        <main className="relative z-10 w-[3000px] h-[3000px]">
+          {/* Центр доски (виртуальный ноль) */}
+          <div className="absolute top-1/2 left-1/2 w-0 h-0">
+             {Object.entries(polaroids).map(([id, data]) => (
+                <Polaroid key={id} id={id} data={data} isNew={id === newCardId} onDelete={deletePolaroid} />
+             ))}
           </div>
-        ) : (
-          <div className="absolute inset-0 pointer-events-auto touch-none">
-            <TransformWrapper
-               initialScale={1}
-               minScale={0.3}
-               maxScale={1}
-               centerOnInit={true}
-               limitToBounds={false}
-               panning={{ excluded: ['polaroid-card'] }}
-               wheel={{ step: 0.05 }}
-               doubleClick={{ disabled: true }}
-            >
-               <TransformComponent wrapperStyle={{ width: '100%', height: '100%' }} contentStyle={{ width: '4000px', height: '4000px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                 {Object.entries(polaroids).map(([id, data]) => (
-                    <Polaroid key={id} id={id} data={data} isNew={id === newCardId} onDelete={deletePolaroid} />
-                 ))}
-               </TransformComponent>
-            </TransformWrapper>
-          </div>
-        )}
-      </main>
+        </main>
+      )}
 
-      {/* ВИНТАЖНЫЙ ФОТОАППАРАТ (Внизу по центру) */}
-      <div className="relative z-50 mt-auto pb-[calc(env(safe-area-inset-bottom,1rem)+1.5rem)] flex flex-col items-center justify-end pointer-events-none">
+      {/* ВИНТАЖНЫЙ ФОТОАППАРАТ (Фиксированный внизу) */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 pb-[calc(env(safe-area-inset-bottom,1rem)+1.5rem)] flex flex-col items-center justify-end pointer-events-none">
          
          <AnimatePresence>
            {isCameraOpen && (
