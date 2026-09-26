@@ -425,7 +425,7 @@ export default function App() {
 
   // ═══ ЭКРАН КАФЕ (Доска Полароидов) ═══
   return (
-    <div className="relative font-body">
+    <div className="relative font-body w-full h-[100dvh] overflow-hidden">
       <CafeBackground />
       
       {/* Звуки */}
