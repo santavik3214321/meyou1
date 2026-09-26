@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment, Float, Text, Sparkles, ContactShadows, Cloud } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Environment, Float, Text, Sparkles, Cloud, MeshReflectorMaterial, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { X, Play, Pause, Send } from 'lucide-react';
 import { initializeApp } from "firebase/app";
@@ -18,16 +18,36 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const distanceRef = ref(db, 'ocean-3d-2026');
+const distanceRef = ref(db, 'ocean-3d-2026-v2');
 const PASSWORDS = { sv: '44', vika: '4' };
 
 // ═══════════════════════════════════════════════════
-// 3D COMPONENTS
+// 3D COMPONENTS (Quiet Luxury / Cinematic)
 // ═══════════════════════════════════════════════════
 
-function Bottle({ dbState }) {
+function CinematicWater() {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.2, 0]}>
+      <planeGeometry args={[300, 300]} />
+      <MeshReflectorMaterial
+        blur={[400, 100]}
+        resolution={1024}
+        mixBlur={1}
+        mixStrength={60}
+        roughness={0.05}
+        depthScale={1.2}
+        minDepthThreshold={0.4}
+        maxDepthThreshold={1.4}
+        color="#010204"
+        metalness={0.9}
+        mirror={1}
+      />
+    </mesh>
+  );
+}
+
+function GlassBottle({ dbState }) {
   const group = useRef();
-  
   const leftPos = -12;
   const rightPos = 12;
 
@@ -40,142 +60,129 @@ function Bottle({ dbState }) {
 
     if (dbState.type === 'message') {
       targetScale = 1;
-      // If from SV (left), it travels to Vika (right)
       targetX = dbState.from === 'sv' ? rightPos : leftPos;
-      targetZ = 2; // bring slightly forward for the recipient
+      targetZ = 3; 
     }
 
-    // Smooth movement and scaling
-    group.current.position.x = THREE.MathUtils.lerp(group.current.position.x, targetX, delta * 0.8);
-    group.current.position.z = THREE.MathUtils.lerp(group.current.position.z, targetZ, delta * 1);
-    group.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 2);
+    group.current.position.x = THREE.MathUtils.lerp(group.current.position.x, targetX, delta * 0.5);
+    group.current.position.z = THREE.MathUtils.lerp(group.current.position.z, targetZ, delta * 0.8);
+    group.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 1.5);
     
-    // Gentle rotation while moving
-    if (Math.abs(group.current.position.x - targetX) > 0.5) {
-      group.current.rotation.z = THREE.MathUtils.lerp(group.current.rotation.z, (group.current.position.x < targetX ? -0.2 : 0.2), delta);
-    } else {
-      group.current.rotation.z = THREE.MathUtils.lerp(group.current.rotation.z, 0, delta * 2);
-    }
+    const isMoving = Math.abs(group.current.position.x - targetX) > 0.1;
+    const tilt = group.current.position.x < targetX ? -0.15 : 0.15;
+    group.current.rotation.z = THREE.MathUtils.lerp(group.current.rotation.z, isMoving ? tilt : 0, delta * 2);
   });
 
   return (
     <group ref={group} position={[0, -0.2, 0]} scale={0.001}>
-      <Float speed={2.5} rotationIntensity={0.6} floatIntensity={1.5} floatingRange={[-0.2, 0.2]}>
-        {/* Main Bottle Body (Simulated Glass) */}
-        <mesh castShadow receiveShadow>
-          <cylinderGeometry args={[0.6, 0.6, 2.5, 32]} />
+      <Float speed={2} rotationIntensity={0.5} floatIntensity={1.2} floatingRange={[-0.1, 0.2]}>
+        {/* Main Glass Body */}
+        <mesh castShadow>
+          <cylinderGeometry args={[0.5, 0.5, 2.2, 48]} />
           <meshPhysicalMaterial 
-            transmission={0.95} 
-            ior={1.5} 
-            thickness={0.5} 
-            roughness={0.05} 
-            color="#e6f2ff" 
+            transmission={1} 
+            ior={1.52} 
+            thickness={1.5} 
+            roughness={0.02} 
+            color="#ffffff" 
             transparent 
           />
         </mesh>
         
         {/* Neck */}
-        <mesh position={[0, 1.5, 0]}>
-          <cylinderGeometry args={[0.25, 0.6, 0.6, 32]} />
-          <meshPhysicalMaterial transmission={0.95} ior={1.5} roughness={0.05} color="#e6f2ff" transparent />
+        <mesh position={[0, 1.4, 0]}>
+          <cylinderGeometry args={[0.2, 0.5, 0.6, 48]} />
+          <meshPhysicalMaterial transmission={1} ior={1.52} roughness={0.02} color="#ffffff" transparent />
         </mesh>
         
         {/* Cork */}
-        <mesh position={[0, 1.9, 0]}>
-          <cylinderGeometry args={[0.22, 0.25, 0.3, 16]} />
-          <meshStandardMaterial color="#3a2512" roughness={0.9} />
+        <mesh position={[0, 1.8, 0]}>
+          <cylinderGeometry args={[0.18, 0.2, 0.25, 24]} />
+          <meshStandardMaterial color="#1a120b" roughness={0.9} />
         </mesh>
         
-        {/* Glowing Scroll Inside */}
-        <mesh rotation={[0, 0, 0.2]} position={[0, -0.2, 0]}>
-          <cylinderGeometry args={[0.18, 0.18, 1.4, 16]} />
-          <meshStandardMaterial color="#fff4e0" emissive="#ffddaa" emissiveIntensity={0.2} roughness={0.8} />
+        {/* Scroll Inside */}
+        <mesh rotation={[0, 0, 0.15]} position={[0, -0.3, 0]}>
+          <cylinderGeometry args={[0.12, 0.12, 1.2, 16]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.1} />
         </mesh>
         
         {/* Magical internal glow */}
-        <pointLight color="#ffcfa3" intensity={2} distance={4} position={[0, 0, 0]} />
-        <Sparkles count={15} scale={1.2} size={2} speed={0.4} opacity={0.5} color="#ffddaa" />
+        <pointLight color="#ffffff" intensity={0.5} distance={3} position={[0, -0.3, 0]} />
+        <Sparkles count={10} scale={1} size={1} speed={0.2} opacity={0.3} color="#ffffff" />
       </Float>
     </group>
   );
 }
 
-function Water() {
+function Shores() {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]} receiveShadow>
-      <planeGeometry args={[200, 200]} />
-      <meshStandardMaterial color="#02050a" roughness={0.02} metalness={0.95} envMapIntensity={1} />
-    </mesh>
-  );
-}
+    <group>
+      {/* SEVAN SHORE (Left) */}
+      <group position={[-18, -1.2, -12]}>
+        <mesh position={[0, 3, -4]}>
+          <coneGeometry args={[6, 10, 4]} />
+          <meshPhysicalMaterial color="#000000" metalness={0.8} roughness={0.1} transmission={0.1} />
+        </mesh>
+        <pointLight position={[2, 6, 0]} color="#ffaa55" intensity={1.5} distance={25} />
+        <Text position={[0, 1, 4]} fontSize={0.8} color="rgba(255,255,255,0.08)" letterSpacing={0.3} font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjQ.ttf">
+          SEVAN
+        </Text>
+      </group>
 
-function SevanShore() {
-  return (
-    <group position={[-16, -1, -8]}>
-      {/* Abstract Glass/Dark Matter Mountains */}
-      <mesh position={[0, 3, -5]}>
-        <coneGeometry args={[5, 8, 4]} />
-        <meshPhysicalMaterial color="#010305" metalness={0.8} roughness={0.2} transmission={0.2} />
-      </mesh>
-      <mesh position={[4, 2, -3]}>
-        <coneGeometry args={[4, 6, 4]} />
-        <meshPhysicalMaterial color="#010305" metalness={0.8} roughness={0.2} />
-      </mesh>
-      {/* Lighthouse Beacon */}
-      <pointLight position={[2, 4, 0]} color="#ffaa55" intensity={1} distance={20} />
-      <Sparkles position={[2, 4, 0]} count={10} scale={2} color="#ffaa55" />
-      <Text position={[0, 1, 2]} fontSize={0.6} color="rgba(255,255,255,0.15)" font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjQ.ttf" letterSpacing={0.2}>
-        SEVAN
-      </Text>
+      {/* TOM RIVER SHORE (Right) */}
+      <group position={[18, -1.2, -12]}>
+        <mesh position={[0, 2, -2]}>
+          <coneGeometry args={[4, 7, 8]} />
+          <meshStandardMaterial color="#000000" metalness={0.9} roughness={0.5} />
+        </mesh>
+        <pointLight position={[-1, 5, 0]} color="#55aaff" intensity={1.5} distance={25} />
+        <Text position={[0, 1, 4]} fontSize={0.8} color="rgba(255,255,255,0.08)" letterSpacing={0.3} font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjQ.ttf">
+          TOM RIVER
+        </Text>
+      </group>
     </group>
   );
 }
 
-function TomShore() {
+function CinematicText() {
   return (
-    <group position={[16, -1, -8]}>
-      {/* Abstract Pine Hills */}
-      <mesh position={[0, 2, -2]}>
-        <coneGeometry args={[3, 6, 8]} />
-        <meshStandardMaterial color="#010305" metalness={0.5} roughness={0.6} />
-      </mesh>
-      <mesh position={[-3, 1.5, 0]}>
-        <coneGeometry args={[2.5, 5, 8]} />
-        <meshStandardMaterial color="#010305" metalness={0.5} roughness={0.6} />
-      </mesh>
-      {/* Lighthouse Beacon */}
-      <pointLight position={[-1, 3.5, 0]} color="#55aaff" intensity={1} distance={20} />
-      <Sparkles position={[-1, 3.5, 0]} count={10} scale={2} color="#55aaff" />
-      <Text position={[0, 1, 3]} fontSize={0.6} color="rgba(255,255,255,0.15)" font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjQ.ttf" letterSpacing={0.2}>
-        TOM RIVER
+    <Float speed={1} rotationIntensity={0.05} floatIntensity={0.2}>
+      <Text 
+        position={[0, 1.5, -20]} 
+        fontSize={5} 
+        color="#ffffff" 
+        material-toneMapped={false} 
+        material-transparent={true}
+        material-opacity={0.03}
+        font="https://fonts.gstatic.com/s/cormorantgaramond/v16/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYpMt4.woff2"
+      >
+        Across the Water
       </Text>
-    </group>
-  );
+    </Float>
+  )
 }
 
 function Scene({ dbState, me }) {
-  const cameraRef = useRef();
-
   useFrame((state) => {
-    // Very slow, cinematic camera drift
-    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, (state.pointer.x * 2), 0.02);
-    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, 4 + (state.pointer.y * 1), 0.02);
+    // Ultra-smooth, expensive-feeling camera drift
+    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, (state.pointer.x * 1.5), 0.015);
+    state.camera.position.y = THREE.MathUtils.lerp(state.camera.position.y, 3 + (state.pointer.y * 0.5), 0.015);
     state.camera.lookAt(0, 0, 0);
   });
 
   return (
     <>
-      <Environment preset="night" environmentIntensity={0.2} />
-      <ambientLight intensity={0.1} />
-      <directionalLight position={[10, 20, 5]} intensity={0.2} color="#ffffff" />
+      <Environment preset="night" environmentIntensity={0.1} />
+      <ambientLight intensity={0.05} />
       
-      <Water />
-      <SevanShore />
-      <TomShore />
-      <Bottle dbState={dbState} me={me} />
+      <CinematicWater />
+      <Shores />
+      <GlassBottle dbState={dbState} me={me} />
+      <CinematicText />
       
-      <Cloud position={[-10, 8, -15]} opacity={0.1} speed={0.2} width={20} depth={1.5} segments={20} />
-      <Cloud position={[10, 6, -20]} opacity={0.1} speed={0.1} width={20} depth={1.5} segments={20} />
+      <Cloud position={[-10, 5, -25]} opacity={0.05} speed={0.1} width={20} depth={1.5} segments={20} />
+      <Cloud position={[10, 4, -25]} opacity={0.05} speed={0.1} width={20} depth={1.5} segments={20} />
     </>
   );
 }
@@ -185,8 +192,8 @@ function Scene({ dbState, me }) {
 // ═══════════════════════════════════════════════════
 
 export default function App() {
-  const [userRole, setUserRole] = useState(localStorage.getItem('oceanRole') || '');
-  const [isAuth, setIsAuth] = useState(!!localStorage.getItem('oceanRole'));
+  const [userRole, setUserRole] = useState(localStorage.getItem('lux3dRole') || '');
+  const [isAuth, setIsAuth] = useState(!!localStorage.getItem('lux3dRole'));
   const [pwd, setPwd] = useState('');
   const [authErr, setAuthErr] = useState('');
 
@@ -200,15 +207,13 @@ export default function App() {
 
   useEffect(() => {
     if (!isAuth) return;
-    const unsub = onValue(distanceRef, (snap) => {
-      setDbState(snap.val() || { type: 'empty' });
-    });
+    const unsub = onValue(distanceRef, (snap) => setDbState(snap.val() || { type: 'empty' }));
     return () => unsub();
   }, [isAuth]);
 
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = 0.3;
+      audioRef.current.volume = 0.2;
       if (musicOn) audioRef.current.play().catch(() => setMusicOn(false));
       else audioRef.current.pause();
     }
@@ -216,27 +221,26 @@ export default function App() {
 
   const login = (e) => {
     e.preventDefault();
-    if (!userRole) { setAuthErr('SELECT SHORE'); return; }
+    if (!userRole) { setAuthErr('SELECT LOCATION'); return; }
     if (pwd === PASSWORDS[userRole]) {
-      localStorage.setItem('oceanRole', userRole);
+      localStorage.setItem('lux3dRole', userRole);
       setAuthErr('');
       setIsAuth(true);
-    } else setAuthErr('INCORRECT');
+    } else setAuthErr('ACCESS DENIED');
   };
 
   const logout = () => {
-    localStorage.removeItem('oceanRole');
+    localStorage.removeItem('lux3dRole');
     setUserRole(''); setPwd(''); setIsAuth(false);
   };
 
-  const me = localStorage.getItem('oceanRole');
+  const me = localStorage.getItem('lux3dRole');
   const isForMe = dbState.type === 'message' && dbState.from !== me;
   const isSentByMe = dbState.type === 'message' && dbState.from === me;
 
   const sendMessage = () => {
     if (!noteText.trim()) return;
     setWriting(false);
-    // Setting it in Firebase instantly starts the 3D travel animation for both clients
     set(distanceRef, { type: 'message', note: noteText, from: me, timestamp: Date.now() });
     setNoteText('');
   };
@@ -249,40 +253,39 @@ export default function App() {
   // ─── LOGIN SCREEN ───
   if (!isAuth) {
     return (
-      <div className="min-h-screen flex flex-col relative bg-[#02050a]">
-        <div className="absolute inset-0 z-0">
-          <Canvas camera={{ position: [0, 4, 15], fov: 45 }}>
+      <div className="min-h-screen flex flex-col relative bg-[#02050a] selection:bg-white/10">
+        <div className="absolute inset-0 z-0 opacity-50">
+          <Canvas camera={{ position: [0, 2, 15], fov: 40 }}>
             <Suspense fallback={null}>
-              <Water />
-              <SevanShore />
-              <TomShore />
+              <CinematicWater />
+              <Shores />
               <Environment preset="night" />
             </Suspense>
           </Canvas>
         </div>
         
         <div className="relative z-10 flex-grow flex flex-col items-center justify-center p-6">
-          <div className="luxury-panel p-8 sm:p-12 w-full max-w-sm reveal-up flex flex-col items-center border border-white/5">
-            <h1 className="font-heading italic text-3xl sm:text-4xl text-white mb-2 text-center">Across the Ocean</h1>
-            <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 mb-10 text-center font-light">
-              3,700 км. Sevan ⇄ Tom
+          <div className="w-full max-w-sm reveal-up flex flex-col items-center">
+            <h1 className="font-heading italic text-4xl sm:text-5xl text-white mb-2 text-center tracking-wide">Across the Water</h1>
+            <p className="font-hud text-[9px] uppercase tracking-[0.3em] text-white/30 mb-12 text-center">
+              3,700 KM • SEVAN TO TOM
             </p>
 
             <form onSubmit={login} className="w-full flex flex-col items-center">
-              <div className="flex w-full gap-3 mb-8">
+              <div className="flex w-full gap-4 mb-8">
                 {[['sv', 'SUREN'], ['vika', 'VIKA']].map(([r, l]) => (
                   <button key={r} type="button" onClick={() => setUserRole(r)}
-                    className={`flex-1 py-3 text-[10px] uppercase tracking-[0.2em] transition-all border ${
-                      userRole === r ? 'border-white text-white bg-white/10' : 'border-white/10 text-white/40 hover:border-white/30'
+                    className={`flex-1 py-4 font-hud text-[9px] uppercase tracking-[0.3em] transition-all border ${
+                      userRole === r ? 'border-white text-white bg-white/5' : 'border-white/10 text-white/30 hover:border-white/30'
                     }`}>{l}</button>
                 ))}
               </div>
-              <input type="password" placeholder="PASSWORD" value={pwd} onChange={e => setPwd(e.target.value)}
-                className="luxury-input w-full px-2 py-3 text-center text-sm tracking-widest placeholder:text-white/20 mb-4" />
-              <div className="h-4 mb-6">
-                {authErr && <p className="text-[9px] text-red-300/70 uppercase tracking-widest">{authErr}</p>}
+              <input type="password" placeholder="ENTER CODE" value={pwd} onChange={e => setPwd(e.target.value)}
+                className="luxury-input w-full px-2 py-4 text-center font-hud text-[10px] tracking-[0.4em] placeholder:text-white/10 mb-4" />
+              <div className="h-4 mb-8">
+                {authErr && <p className="font-hud text-[9px] text-white/50 uppercase tracking-[0.3em]">{authErr}</p>}
               </div>
-              <button type="submit" className="luxury-btn w-full py-3.5 text-[10px] uppercase tracking-[0.2em]">Enter</button>
+              <button type="submit" className="luxury-btn w-full py-4 font-hud text-[9px] uppercase tracking-[0.3em]">Initialize</button>
             </form>
           </div>
         </div>
@@ -292,10 +295,11 @@ export default function App() {
 
   // ─── MAIN 3D SCENE ───
   return (
-    <div className="min-h-screen flex flex-col relative bg-[#02050a]">
+    <div className="min-h-screen flex flex-col relative bg-[#02050a] selection:bg-white/10">
+      
       {/* 3D CANVAS */}
       <div className="absolute inset-0 z-0">
-        <Canvas camera={{ position: [0, 5, 20], fov: 40 }} dpr={[1, 2]}>
+        <Canvas camera={{ position: [0, 4, 18], fov: 40 }} dpr={[1, 2]}>
           <Suspense fallback={null}>
             <Scene dbState={dbState} me={me} />
           </Suspense>
@@ -308,81 +312,81 @@ export default function App() {
       <div className="hud-layer justify-between">
         
         {/* Top Header */}
-        <div className="p-6 sm:p-10 flex justify-between items-start fade-in hud-interactive">
-          <button onClick={() => setMusicOn(!musicOn)} className="flex items-center gap-3 text-white/50 hover:text-white transition group">
-            <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center group-hover:border-white/60 transition">
+        <div className="p-8 sm:p-12 flex justify-between items-start fade-in hud-interactive">
+          <button onClick={() => setMusicOn(!musicOn)} className="flex items-center gap-4 text-white/30 hover:text-white transition group outline-none">
+            <div className="w-8 h-8 border border-white/10 flex items-center justify-center group-hover:border-white/40 transition">
               {musicOn ? <Pause size={10} className="fill-current" /> : <Play size={10} className="fill-current ml-0.5" />}
             </div>
-            <span className="text-[9px] uppercase tracking-[0.2em] font-light hidden sm:block">Ambient</span>
+            <span className="font-hud text-[9px] uppercase tracking-[0.3em] hidden sm:block">Atmosphere</span>
           </button>
           
-          <button onClick={logout} className="text-[9px] uppercase tracking-[0.2em] text-white/30 hover:text-white/80 transition">
+          <button onClick={logout} className="font-hud text-[9px] uppercase tracking-[0.3em] text-white/30 hover:text-white transition">
             Disconnect
           </button>
         </div>
 
         {/* Center UI Overlay */}
-        <div className="flex-grow flex flex-col items-center justify-end pb-20 hud-interactive">
+        <div className="flex-grow flex flex-col items-center justify-end pb-24 hud-interactive">
           
           {dbState.type === 'empty' && !writing && (
-            <button onClick={() => setWriting(true)} className="luxury-btn px-8 py-3.5 text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 reveal-up">
-              <Send size={12} /> Send a Message
+            <button onClick={() => setWriting(true)} className="group flex flex-col items-center gap-4 reveal-up outline-none">
+              <span className="font-heading italic text-3xl text-white/40 group-hover:text-white transition duration-700">Write a letter</span>
+              <div className="w-px h-12 bg-white/20 group-hover:bg-white/60 transition duration-700" />
             </button>
           )}
 
           {isSentByMe && (
-            <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-light reveal-up">
-              Bottle is traveling to {me === 'sv' ? 'Tom River' : 'Sevan'}...
-            </p>
+            <div className="flex flex-col items-center reveal-up">
+              <p className="font-hud text-[9px] uppercase tracking-[0.4em] text-white/30 mb-3">En Route</p>
+              <p className="font-heading italic text-xl text-white/50">To {me === 'sv' ? 'Tom River' : 'Sevan'}</p>
+            </div>
           )}
 
           {isForMe && !reading && (
-            <div className="flex flex-col items-center reveal-up">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-white/50 mb-4 font-light">A message arrived</p>
-              <button onClick={() => setReading(true)} className="luxury-btn px-8 py-3.5 text-[10px] uppercase tracking-[0.2em]">
-                Read Message
-              </button>
-            </div>
+            <button onClick={() => setReading(true)} className="group flex flex-col items-center gap-4 reveal-up outline-none">
+              <p className="font-hud text-[9px] uppercase tracking-[0.4em] text-white/50">Message Awaits</p>
+              <span className="font-heading italic text-3xl text-white/80 group-hover:text-white transition duration-700">Open Glass</span>
+            </button>
           )}
         </div>
       </div>
 
       {/* WRITE MODAL */}
       {writing && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md fade-in hud-interactive">
-          <div className="luxury-panel w-full max-w-lg p-8 sm:p-12 reveal-up relative">
-            <button onClick={() => setWriting(false)} className="absolute top-6 right-6 text-white/30 hover:text-white transition">
-              <X size={20} strokeWidth={1} />
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-[#02050a]/80 backdrop-blur-md fade-in hud-interactive">
+          <div className="w-full max-w-2xl p-8 sm:p-16 reveal-up relative flex flex-col">
+            <button onClick={() => setWriting(false)} className="absolute top-8 right-8 text-white/30 hover:text-white transition">
+              <X size={24} strokeWidth={1} />
             </button>
-            <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 mb-6 font-light">To {me === 'sv' ? 'Vika' : 'Suren'}</p>
+            <p className="font-hud text-[9px] uppercase tracking-[0.4em] text-white/30 mb-12">To {me === 'sv' ? 'Vika' : 'Suren'}</p>
             <textarea 
               value={noteText} onChange={e => setNoteText(e.target.value)}
-              placeholder="Your message across the ocean..."
-              className="w-full h-40 bg-transparent text-white font-heading italic text-2xl sm:text-3xl leading-relaxed focus:outline-none resize-none placeholder:text-white/20 mb-8"
+              placeholder="Your message..."
+              className="w-full h-48 bg-transparent text-white font-heading italic text-3xl sm:text-4xl leading-relaxed focus:outline-none resize-none placeholder:text-white/10 mb-12"
               autoFocus
             />
-            <div className="flex justify-end">
-              <button onClick={sendMessage} disabled={!noteText.trim()} className="luxury-btn px-8 py-3 text-[10px] uppercase tracking-[0.2em]">
-                Cast Bottle
+            <div className="flex justify-start">
+              <button onClick={sendMessage} disabled={!noteText.trim()} className="luxury-btn px-12 py-4 font-hud text-[9px] uppercase tracking-[0.3em]">
+                Release
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* READ MODAL */}
+      {/* READ MODAL (Magazine Style) */}
       {reading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in hud-interactive">
-          <div className="letter-modal w-full max-w-2xl min-h-[50vh] p-10 sm:p-16 flex flex-col relative">
-            <p className="text-[9px] uppercase tracking-[0.3em] text-black/40 mb-12 font-light border-b border-black/10 pb-4">
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-[#02050a]/90 backdrop-blur-xl fade-in hud-interactive">
+          <div className="letter-modal w-full max-w-3xl min-h-[60vh] p-12 sm:p-24 flex flex-col relative">
+            <p className="font-hud text-[9px] uppercase tracking-[0.4em] text-black/30 mb-16 border-b border-black/5 pb-6">
               From {dbState.from === 'sv' ? 'Suren (Sevan)' : 'Vika (Tom)'}
             </p>
-            <p className="font-heading italic text-3xl sm:text-4xl text-black/90 leading-relaxed mb-16 whitespace-pre-wrap">
-              "{dbState.note}"
+            <p className="font-heading italic text-3xl sm:text-5xl text-black/90 leading-tight mb-20 whitespace-pre-wrap">
+              {dbState.note}
             </p>
             <div className="mt-auto flex justify-end">
-              <button onClick={consumeMessage} className="border border-black/20 text-black/70 hover:bg-black hover:text-white transition duration-500 px-8 py-3 text-[9px] uppercase tracking-[0.2em]">
-                Keep Message
+              <button onClick={consumeMessage} className="border border-black/20 text-black/60 hover:bg-black hover:text-white transition duration-700 px-10 py-4 font-hud text-[9px] uppercase tracking-[0.3em]">
+                Close
               </button>
             </div>
           </div>
