@@ -3,6 +3,11 @@ import { Lock, Heart, LogOut, Music, Pause, Play, Camera, X, ImagePlus } from 'l
 import { motion, AnimatePresence } from 'framer-motion';
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue, push, update, remove } from "firebase/database";
+import { useFBX } from '@react-three/drei';
+import SurpriseMorph from './SurpriseMorph';
+
+// Start downloading the 56MB FBX immediately in the background so it's instant!
+useFBX.preload('/bouquet.fbx');
 
 // ─── Firebase ────────────────────────────────────────────
 const firebaseConfig = {
@@ -256,6 +261,7 @@ export default function App() {
   const [polaroids, setPolaroids] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [selectedNoteId, setSelectedNoteId] = useState(null);
+  const [showSurprise, setShowSurprise] = useState(false);
   const boardRef = useRef(null);
   
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -428,6 +434,8 @@ export default function App() {
     <div className="relative font-body w-full h-[100dvh] overflow-hidden">
       <CafeBackground />
       
+      {showSurprise && <SurpriseMorph onClose={() => setShowSurprise(false)} />}
+      
       {/* Звуки */}
       <audio ref={audioRef} src="/music/sting.mp3" loop />
       <audio ref={shutterRef} src="https://cdn.freesound.org/previews/389/389728_5724505-lq.mp3" preload="auto" />
@@ -447,8 +455,11 @@ export default function App() {
           <LoveCounter />
         </div>
         
-        {/* Плеер */}
-        <div className="pointer-events-auto">
+        {/* Плеер и Сюрприз */}
+        <div className="pointer-events-auto flex items-center gap-2 flex-col sm:flex-row">
+           <button onClick={() => setShowSurprise(true)} className="btn-glow text-white flex items-center justify-center gap-1 sm:gap-2 text-[8px] sm:text-[9px] uppercase tracking-[2px] font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-[0_0_15px_rgba(255,154,158,0.5)]">
+             ✨ Подарок
+           </button>
            <MiniPlayer isPlaying={isMusicPlaying} onToggle={() => setIsMusicPlaying(!isMusicPlaying)} />
         </div>
         

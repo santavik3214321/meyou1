@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+</script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+const loader = new FBXLoader();
+loader.load('/bouquet.fbx', (fbx) => {
+    let vertices = 0;
+    fbx.traverse(c => {
+        if (c.isMesh) {
+            vertices += c.geometry.attributes.position.count;
+            console.log(c.name, "vertices:", c.geometry.attributes.position.count, "has color:", !!c.geometry.attributes.color);
+        }
+    });
+    console.log("Total vertices:", vertices);
+});
+</script>
+</body>
+</html>
