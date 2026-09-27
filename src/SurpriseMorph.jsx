@@ -498,8 +498,8 @@ function MorphParticles({ fbxData, vikaData, numPoints, progress, nextScatterIdx
 }
 
 // ─── MAIN SURPRISE VIEW ──────────────────────────────────
-function SceneContent({ images, phase, nextScatterIdx, onReady }) {
-    const fbx = useFBX('/bouquet.fbx'); 
+function SceneContent({ images, phase, nextScatterIdx, onReady, fbxUrl }) {
+    const fbx = useFBX(fbxUrl); 
     const controlsRef = useRef();
     const { camera } = useThree();
     const isMobile = window.innerWidth < 768;
@@ -778,11 +778,38 @@ export default function SurpriseMorph({ onClose }) {
     const [phase, setPhase] = useState(0); 
     const [shapeIdx, setShapeIdx] = useState(0);
     const [fbxLoaded, setFbxLoaded] = useState(false);
+    const [fbxUrl, setFbxUrl] = useState(null);
+    const [downloadProgress, setDownloadProgress] = useState(0);
 
     useEffect(() => {
+        const loadFbxChunks = async () => {
+            try {
+                const chunks = ['/bouquet_part_aa', '/bouquet_part_ab', '/bouquet_part_ac'];
+                const buffers = [];
+                for (let i = 0; i < chunks.length; i++) {
+                    const response = await fetch(chunks[i]);
+                    if (!response.ok) throw new Error("Failed to fetch chunk: " + chunks[i]);
+                    const buffer = await response.arrayBuffer();
+                    buffers.push(buffer);
+                    setDownloadProgress(Math.round(((i + 1) / chunks.length) * 100));
+                }
+                const blob = new Blob(buffers, { type: 'application/octet-stream' });
+                setFbxUrl(URL.createObjectURL(blob));
+            } catch (err) {
+                console.error("Error loading FBX chunks:", err);
+            }
+        };
+
+        loadFbxChunks();
+
         loadImageData('/vika.jpg').then(vika => {
             if (vika) setImages({ vika });
         });
+        
+        // Cleanup object URL
+        return () => {
+            if (fbxUrl) URL.revokeObjectURL(fbxUrl);
+        };
     }, []);
 
     useEffect(() => {
@@ -841,23 +868,26 @@ export default function SurpriseMorph({ onClose }) {
             
             <Canvas camera={{ position: [0, 0, initialZ], fov: 45 }}>
                 <React.Suspense fallback={null}>
-                    {images && (
+                    {images && fbxUrl && (
                         <SceneContent 
                             images={images} 
                             phase={phase} 
                             nextScatterIdx={shapeIdx}
                             onReady={() => setFbxLoaded(true)}
+                            fbxUrl={fbxUrl}
                         />
                     )}
                 </React.Suspense>
             </Canvas>
 
-            {(!images || !fbxLoaded) && (
+            {(!images || !fbxLoaded || !fbxUrl) && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-50" style={{
                     background: 'radial-gradient(ellipse at 50% 0%, #1a0a2e 0%, #0d0515 40%, #050208 100%)'
                 }}>
                     <div className="w-10 h-10 border-2 border-t-pink-300 border-white/10 rounded-full animate-spin mb-6" />
-                    <p className="font-heading italic text-lg md:text-xl text-pink-200/80 tracking-wide">Собираем магию для Вики...</p>
+                    <p className="font-heading italic text-lg md:text-xl text-pink-200/80 tracking-wide">
+                        Собираем магию для Вики... {downloadProgress > 0 && downloadProgress < 100 ? `${downloadProgress}%` : ''}
+                    </p>
                 </div>
             )}
 
